@@ -32,7 +32,15 @@ class DatabaseHelper {
 
   //disposedcase
   static const String tbldisposednature = "disposed_nature";
+  static const String tbldisposedcaseid = "disposedcase_id";
   static const String tbldisposeddate = "disposed_date";
+
+
+  //casemultiplehistory
+  static const String tblmultiplehistoryid = "multiplehistory_id";
+  static const String tblpreviousdate = "previous_date";
+  static const String tbladjourndate = "adjourn_date";
+  static const String tblstep = "step";
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -77,6 +85,19 @@ class DatabaseHelper {
       FOREIGN KEY (case_id) REFERENCES caseinfo (case_id) ON DELETE CASCADE
     )
   ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS casemultiplehistory (
+        multiplehistory_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id INTEGER,
+        previous_date TEXT,
+        adjourn_date TEXT,
+        step TEXT,
+        FOREIGN KEY (case_id) REFERENCES caseinfo (case_id) ON DELETE CASCADE
+
+      )
+    ''');
+
   }
 
   Future<void> close() async {
@@ -152,4 +173,54 @@ class DatabaseHelper {
     return results.map((e) => CaseModel.fromMap(e)).toList();
   }
 
+  Future<void> updateCaseAsDisposed(int caseId) async {
+    final db = await instance.database;
+    await db.update(
+      'caseinfo',
+      {'is_disposed': 1},
+      where: 'case_id = ?',
+      whereArgs: [caseId],
+    );
+  }
+
+  Future<int> insertCaseStep(int caseId, String previousDate, String adjournDate, String step) async {
+    final db = await database;
+    return await db.insert('casemultiplehistory', {
+      'case_id': caseId,
+      'previous_date': previousDate,
+      'adjourn_date': adjournDate,
+      'step': step,
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getCaseSteps(int caseId) async {
+    final db = await database;
+    return await db.query('casemultiplehistory', where: 'case_id = ?', whereArgs: [caseId]);
+  }
+
+  Future<int> saveCaseMultipleHistory( Map<String, dynamic> historyData) async {
+    final db = await database;
+    return await db.insert(
+      'casemultiplehistory',
+      historyData,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> fetchCaseMultipleHistory(int caseId) async {
+    final db = await database;
+    return await db.query(
+      'casemultiplehistory',
+      where: 'case_id = ?',
+      whereArgs: [caseId],
+      orderBy: 'adjourn_date DESC',
+    );
+  }
+
+
+// Future<void> _deleteCase(int caseId) async {
+  //   final db = await DatabaseHelper.instance.database;
+  //   await db.delete(DatabaseHelper.tblcaseinfo, where: 'case_id = ?', whereArgs: [caseId]);
+  //   _loadCases();
+  // }
 }

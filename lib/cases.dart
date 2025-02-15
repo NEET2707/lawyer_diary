@@ -100,12 +100,15 @@ class _CasesState extends State<Cases> {
   }
 
   Future<void> _loadCases() async {
-    final data = await DatabaseHelper.instance.fetchCases();
+    final List<CaseModel> caseList = await DatabaseHelper.instance.getOngoingCases(); // Fetch only ongoing cases
+
     setState(() {
-      _cases = data;
-      _filteredCases = data; // Initially, show all cases
+      _cases = caseList.map((caseItem) => caseItem.toMap()).toList();
+      _filteredCases = _cases; // Initially, show all cases
     });
   }
+
+
 
   void _filterCases(String query) {
     setState(() {
@@ -243,9 +246,4 @@ class _CasesState extends State<Cases> {
     );
   }
 
-  Future<void> _deleteCase(int caseId) async {
-    final db = await DatabaseHelper.instance.database;
-    await db.delete(DatabaseHelper.tblcaseinfo, where: 'case_id = ?', whereArgs: [caseId]);
-    _loadCases();
-  }
 }

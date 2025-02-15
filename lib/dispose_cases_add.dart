@@ -58,12 +58,18 @@ class _DisposeCasesState extends State<DisposeCases> {
               children: [
                 const Text("Dispose Dt.:", style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(width: 10),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: themecolor,
-                  ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: themecolor),
                   onPressed: _pickDate,
-                  child: const Icon(Icons.calendar_today, color: Colors.white),
+                  icon: const Icon(Icons.calendar_today, color: Colors.white),
+                  label: Text(
+                    _selectedDate != null
+                        ? "${_selectedDate!.day.toString().padLeft(2, '0')} "
+                        "${_selectedDate!.month.toString().padLeft(2, '0')} "
+                        "${_selectedDate!.year}"
+                        : "Pick a date",
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             ),
@@ -112,24 +118,27 @@ class _DisposeCasesState extends State<DisposeCases> {
     bool? confirm = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Confirmation"),
-        content: Text("Are you sure you want to dispose this case?"),
+        title: const Text("Confirmation"),
+        content: const Text("Are you sure you want to dispose this case?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text("Cancel"),
+            child: const Text("Cancel"),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text("OK"),
+            child: const Text("OK"),
           ),
         ],
       ),
     );
 
     if (confirm == true) {
-      // Save data to the database
+      // Save disposed case details
       await DatabaseHelper.instance.saveDisposedCase(widget.caseId, disposeNote, _selectedDate!);
+
+      // Mark case as disposed in the caseinfo table
+      await DatabaseHelper.instance.updateCaseAsDisposed(widget.caseId);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Case disposed successfully!")),
@@ -160,25 +169,4 @@ class _DisposeCasesState extends State<DisposeCases> {
       });
     }
   }
-
-  // Function to handle Save button (implement Firebase logic here)
-  // void _saveDisposeCase(int caseId) async {
-  //   String disposeNote = _disposeNoteController.text;
-  //
-  //   if (disposeNote.isEmpty || _selectedDate == null) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text("Please enter details and select a date")),
-  //     );
-  //     return;
-  //   }
-  //
-  //   // Call saveDisposedCase from DatabaseHelper instance
-  //   await DatabaseHelper.instance.saveDisposedCase(caseId, disposeNote, _selectedDate!);
-  //
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     const SnackBar(content: Text("Case disposed successfully")),
-  //   );
-  //
-  //   Navigator.pop(context);
-  // }
 }
