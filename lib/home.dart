@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:lawyer_diary/add_cases.dart';
+import 'package:lawyer_diary/manage_case_type.dart';
+import 'package:lawyer_diary/manage_court.dart';
+import 'package:lawyer_diary/reminderpage.dart';
 import 'cases.dart';
 import 'color.dart';
 import 'disoposed_cases.dart';
-import 'notification.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -26,7 +28,7 @@ class _HomeState extends State<Home> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NotificationScreen()),
+                MaterialPageRoute(builder: (context) => ReminderPage()),
               );
             },
             child: const Padding(
@@ -74,20 +76,33 @@ class _HomeState extends State<Home> {
           _buildHomeCard(icon: Icons.maps_home_work_outlined,
               title: "Manage Court",
               subtitle: "Clik to Manage Court List",
-              onTap: (){}
-          ),
+              onTap: (){
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ManageCourt()),
+                );
+              }
+              ),
 
           _buildHomeCard(icon: Icons.cases_rounded,
               title: "Manage CaseType",
               subtitle: "Clik to Manage CaseType List",
-              onTap: (){}
-          ),
+              onTap: (){
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ManageCaseType()),
+                );
+              }           ),
 
           _buildHomeCard(icon: Icons.punch_clock,
               title: "Reminder Cases",
               subtitle: "Clik to View All Reminder Cases",
-              onTap: (){}
-          ),
+              onTap: (){
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ReminderPage()),
+                );
+              }            ),
 
           _buildHomeCard(icon: Icons.restore,
               title: "Lawyer Diary Backup",

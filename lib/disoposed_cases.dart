@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'database_helper.dart';
-import 'case_details.dart';
+import 'Database/database_helper.dart';
+import 'Case Details/case_details.dart';
 import 'color.dart';
 
 class DisposedCases extends StatefulWidget {
@@ -117,7 +117,7 @@ class _DisposedCasesState extends State<DisposedCases> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CaseDetailsPage(caseItem: caseItem),
+                      builder: (context) => CaseDetailsPage(caseItem: caseItem,caseId: int.parse(caseItem['case_id'].toString())),
                     ),
                   );
                 },

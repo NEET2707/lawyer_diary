@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lawyer_diary/color.dart';
-import 'database_helper.dart';
+import '../Database/database_helper.dart';
 
 class StepsCase extends StatefulWidget {
   final int caseId;

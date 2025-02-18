@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lawyer_diary/color.dart';
 import 'package:lawyer_diary/home.dart';
-import 'database_helper.dart';
+import '../Database/database_helper.dart';
 
-import 'extra.dart';
+import '../extra.dart';
 
 class DisposeCases extends StatefulWidget {
   final int caseId; // Add this line

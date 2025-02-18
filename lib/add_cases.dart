@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'Database/database_helper.dart';
 import 'color.dart';
-import 'database_helper.dart';
 
 
 class AddCases extends StatefulWidget {
@@ -21,14 +21,10 @@ class _AddCasesState extends State<AddCases> {
         _caseNumberController.text.isEmpty ||
         _caseYearController.text.isEmpty ||
         _onBehalfOfController.text.isEmpty ||
-        _partyNameController.text.isEmpty ||
-        _contactNoController.text.isEmpty ||
-        _adverseAdvocateController.text.isEmpty ||
-        _advocateContactController.text.isEmpty ||
-        _respondentNameController.text.isEmpty ||
-        _filedUnderSectionController.text.isEmpty) {
+        selectedCourt.isEmpty ||
+        selectedCaseType.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("All fields are required")),
+        SnackBar(content: Text("All required fields must be filled")),
       );
       return;
     }
@@ -71,9 +67,6 @@ class _AddCasesState extends State<AddCases> {
     }
 
     Navigator.pop(context);
-    // setState(() {
-    //
-    // });
   }
 
 
@@ -138,7 +131,7 @@ class _AddCasesState extends State<AddCases> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _sectionTitle("CASE DETAILS"),
-            _textField("Case Title", _caseTitleController),
+            _textField("Case Title", _caseTitleController, isRequired: true),
             _dropdownField("Court Name", selectedCourt, courtOptions, (value) {
               setState(() {
                 selectedCourt = value!;
@@ -150,7 +143,7 @@ class _AddCasesState extends State<AddCases> {
                   selectedCourt = input;
                 });
               });
-            }),
+            }, isRequired: true),
             _dropdownField("Case Type", selectedCaseType, caseTypeOptions, (value) {
               setState(() {
                 selectedCaseType = value!;
@@ -162,16 +155,16 @@ class _AddCasesState extends State<AddCases> {
                   selectedCaseType = input;
                 });
               });
-            }),
+            }, isRequired: true),
             Row(
               children: [
-                Expanded(child: _textField("Case No.", _caseNumberController, isNumeric: true),),
+                Expanded(child: _textField("Case No.", _caseNumberController, isNumeric: true, isRequired: true),),
                 const SizedBox(width: 10),
-                Expanded(child: _yearPickerField("Year", _caseYearController)),
+                Expanded(child: _yearPickerField("Year", _caseYearController, isRequired: true)),
 
               ],
             ),
-            _textField("On Behalf Of", _onBehalfOfController),
+            _textField("On Behalf Of", _onBehalfOfController, isRequired: true),
 
             _sectionTitle("PARTY DETAILS"),
             _textField("Party Name", _partyNameController),
@@ -200,7 +193,7 @@ class _AddCasesState extends State<AddCases> {
     );
   }
 
-  Widget _textField(String label, TextEditingController controller, {bool isNumeric = false}) {
+  Widget _textField(String label, TextEditingController controller, {bool isNumeric = false, bool isRequired = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: TextField(
@@ -208,7 +201,7 @@ class _AddCasesState extends State<AddCases> {
         keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
         inputFormatters: isNumeric ? [FilteringTextInputFormatter.digitsOnly] : [],
         decoration: InputDecoration(
-          labelText: label,
+          labelText: isRequired ? '$label *' : label,  // Add asterisk for required fields
           border: OutlineInputBorder(),
           contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
         ),
@@ -217,9 +210,8 @@ class _AddCasesState extends State<AddCases> {
     );
   }
 
-
   Widget _dropdownField(
-      String label, String value, List<String> options, ValueChanged<String?> onChanged, VoidCallback onAdd) {
+      String label, String value, List<String> options, ValueChanged<String?> onChanged, VoidCallback onAdd, {bool isRequired = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -227,9 +219,9 @@ class _AddCasesState extends State<AddCases> {
           Expanded(
             child: InputDecorator(
               decoration: InputDecoration(
-                labelText: label,
+                labelText: isRequired ? '$label *' : label,  // Add asterisk for required fields
                 border: OutlineInputBorder(),
-                contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10), // Reduce padding
+                contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
@@ -239,7 +231,7 @@ class _AddCasesState extends State<AddCases> {
                   items: options.map((String option) {
                     return DropdownMenuItem<String>(
                       value: option,
-                      child: Text(option, style: const TextStyle(fontSize: 14)), // Adjust font size
+                      child: Text(option, style: const TextStyle(fontSize: 14)),
                     );
                   }).toList(),
                 ),
@@ -255,14 +247,15 @@ class _AddCasesState extends State<AddCases> {
     );
   }
 
-  Widget _yearPickerField(String label, TextEditingController controller) {
+
+  Widget _yearPickerField(String label, TextEditingController controller, {bool isRequired = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: TextFormField(
         controller: controller,
         readOnly: true, // Prevent manual input
         decoration: InputDecoration(
-          labelText: label,
+          labelText: isRequired ? '$label *' : label, // Add asterisk for required fields
           border: OutlineInputBorder(),
           contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
           suffixIcon: const Icon(Icons.calendar_today),

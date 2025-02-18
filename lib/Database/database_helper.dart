@@ -1,12 +1,13 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
-import 'cases.dart';
+import '../cases.dart';
 
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
+
 
   DatabaseHelper._init();
 
@@ -95,6 +96,28 @@ class DatabaseHelper {
         step TEXT,
         FOREIGN KEY (case_id) REFERENCES caseinfo (case_id) ON DELETE CASCADE
 
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS casenote (
+        notes_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id INTEGER,
+        note TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS courtlist (
+        court_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        court_name TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS casetype (
+        casetype_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_type TEXT
       )
     ''');
 
@@ -216,6 +239,78 @@ class DatabaseHelper {
       orderBy: 'adjourn_date DESC',
     );
   }
+
+  Future<int> updateCaseStep(int multiplehistoryId, String updatedStep) async {
+    final db = await database;
+    return await db.update(
+      'casemultiplehistory',
+      {'step': updatedStep},
+      where: 'multiplehistory_id = ?', // Use correct column name
+      whereArgs: [multiplehistoryId],
+    );
+  }
+
+
+
+  Future<int> saveCaseNote(int caseId, String note) async {
+    final db = await database;
+    return await db.insert(
+      'casenote',
+      {
+        'case_id': caseId,
+        'note': note,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  // Function to fetch all notes for a given case_id
+  Future<List<Map<String, dynamic>>> fetchCaseNotes(int caseId) async {
+    final db = await database;
+    return await db.query(
+      'casenote',
+      where: 'case_id = ?',
+      whereArgs: [caseId],
+    );
+  }
+
+  Future<int> deleteNote(int notesId) async {
+    final db = await database;
+    return await db.delete(
+      'casenote',
+      where: 'notes_id = ?',
+      whereArgs: [notesId],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getCasesByAdjournDate(String date) async {
+    final db = await database;
+    print("Searching cases for date: $date");
+
+    List<Map<String, dynamic>> results = await db.rawQuery('''
+    SELECT 
+      cmh.case_id, 
+      ci.case_title, 
+      cmh.adjourn_date
+    FROM casemultiplehistory cmh
+    INNER JOIN caseinfo ci ON cmh.case_id = ci.case_id
+    WHERE cmh.adjourn_date IS NOT NULL AND substr(cmh.adjourn_date, 1, 10) = ?
+  ''', [date]);
+
+    print("Cases found: ${results.length}");
+    return results;
+  }
+
+
+
+
+
+  Future<List<Map<String, dynamic>>> checkAllCases() async {
+    final db = await database;
+    return await db.query('casemultiplehistory');
+  }
+
+
 
 
 // Future<void> _deleteCase(int caseId) async {
