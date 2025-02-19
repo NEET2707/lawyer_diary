@@ -117,9 +117,14 @@ class _DisposedCasesState extends State<DisposedCases> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CaseDetailsPage(caseItem: caseItem,caseId: int.parse(caseItem['case_id'].toString())),
+                      builder: (context) => CaseDetailsPage(
+                        caseItem: caseItem,
+                        caseId: int.parse(caseItem['case_id'].toString()),
+                        disposeFlag: false,
+                      ),
                     ),
                   );
+
                 },
                 child: const Text("View Details", style: TextStyle(color: Colors.blue, fontSize: 16)),
               ),

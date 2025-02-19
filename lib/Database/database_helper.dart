@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -301,14 +305,105 @@ class DatabaseHelper {
     return results;
   }
 
-
-
-
-
   Future<List<Map<String, dynamic>>> checkAllCases() async {
     final db = await database;
     return await db.query('casemultiplehistory');
   }
+
+
+  Future<int> getCountExcludingDisposedCases() async {
+
+    // Open the database
+    final db = await database;
+
+    // Run the query to get the count of non-disposed cases
+    List<Map<String, dynamic>> result = await db.rawQuery('''
+    SELECT COUNT(*) 
+    FROM caseinfo 
+    WHERE case_id NOT IN (SELECT case_id FROM disposedcase)
+  ''');
+
+    // Extract the count from the result
+    int count = result.first.values.first;
+
+    return count;
+  }
+
+  Future<int> countDisposedCases() async {
+    // Query the table to count the records
+    final db = await database;
+
+    List<Map<String, dynamic>> result = await db.rawQuery('SELECT COUNT(*) FROM disposedcase');
+
+    // The result will be a list with a single row containing the count
+    int count = Sqflite.firstIntValue(result) ?? 0; // If no records, default to 0
+    return count;
+  }
+
+
+  Future<int> countRecordsWithTodayAdjournDate() async {
+    // Get today's date in the same format as the adjourn_date
+    final db = await database;
+
+    String todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    print(todayDate);
+    // Query to count records where adjourn_date is today's date
+    var result = await db.rawQuery('''
+    SELECT COUNT(*) 
+    FROM caseinfo c
+    JOIN casemultiplehistory h ON c.case_id = h.case_id
+    WHERE strftime('%Y-%m-%d', h.adjourn_date) = ?
+  ''', [todayDate]);
+
+
+
+    // Get the count from the result
+    int count = Sqflite.firstIntValue(result) ?? 0;
+
+    return count;
+  }
+
+  // Future<String> backupDatabase() async {
+  //   try {
+  //     Directory appDocDir = await getApplicationDocumentsDirectory();
+  //     String dbPath = join(appDocDir.path, 'your_database.db'); // Adjust the DB name
+  //     Directory backupDir = await getExternalStorageDirectory() ?? appDocDir;
+  //     String backupPath = join(backupDir.path, 'backup_database.db');
+  //
+  //     File dbFile = File(dbPath);
+  //     if (await dbFile.exists()) {
+  //       await dbFile.copy(backupPath);
+  //       return "Backup successful! Saved at: $backupPath";
+  //     } else {
+  //       return "Database file not found!";
+  //     }
+  //   } catch (e) {
+  //     return "Backup failed: $e";
+  //   }
+  // }
+  //
+  //
+  // Future<String> restoreDatabase() async {
+  //   try {
+  //     Directory appDocDir = await getApplicationDocumentsDirectory();
+  //     String dbPath = join(appDocDir.path, 'your_database.db');
+  //     Directory backupDir = await getExternalStorageDirectory() ?? appDocDir;
+  //     String backupPath = join(backupDir.path, 'backup_database.db');
+  //
+  //     File backupFile = File(backupPath);
+  //     if (await backupFile.exists()) {
+  //       await backupFile.copy(dbPath);
+  //       return "Restore successful!";
+  //     } else {
+  //       return "Backup file not found!";
+  //     }
+  //   } catch (e) {
+  //     return "Restore failed: $e";
+  //   }
+  // }
+
+
+
 
 
 

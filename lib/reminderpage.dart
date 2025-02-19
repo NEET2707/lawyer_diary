@@ -81,6 +81,7 @@ class _ReminderPageState extends State<ReminderPage> {
                     builder: (context) => CaseDetailsPage(
                       caseItem: caseItem,
                       caseId: caseItem['case_id'],
+                      disposeFlag: true,  // Pass the flag value
                     ),
                   ),
                 );

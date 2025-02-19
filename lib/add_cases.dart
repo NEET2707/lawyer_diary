@@ -93,8 +93,14 @@ class _AddCasesState extends State<AddCases> {
 
     if (widget.caseItem != null) {
       _caseTitleController.text = widget.caseItem!['case_title'] ?? "";
-      selectedCourt = widget.caseItem!['court_name'] ?? "Italiya";
-      selectedCaseType = widget.caseItem!['case_type'] ?? "Criminal";
+
+      // Ensure the value exists in the list; otherwise, use a default
+      String caseCourt = widget.caseItem!['court_name'] ?? "Italiya";
+      selectedCourt = courtOptions.contains(caseCourt) ? caseCourt : "Italiya";
+
+      String caseType = widget.caseItem!['case_type'] ?? "Criminal";
+      selectedCaseType = caseTypeOptions.contains(caseType) ? caseType : "Criminal";
+
       _caseNumberController.text = widget.caseItem!['case_number'] ?? "";
       _caseYearController.text = widget.caseItem!['case_year']?.toString() ?? "";
       _onBehalfOfController.text = widget.caseItem!['case_behalf_of'] ?? "";
@@ -106,6 +112,7 @@ class _AddCasesState extends State<AddCases> {
       _advocateContactController.text = widget.caseItem!['adverse_advocate_contact'] ?? "";
     }
   }
+
 
 
   @override
@@ -142,7 +149,8 @@ class _AddCasesState extends State<AddCases> {
                   courtOptions.add(input);
                   selectedCourt = input;
                 });
-              });
+              }
+              );
             }, isRequired: true),
             _dropdownField("Case Type", selectedCaseType, caseTypeOptions, (value) {
               setState(() {

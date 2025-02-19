@@ -4,8 +4,9 @@ import '../Database/database_helper.dart';
 
 class StepsCase extends StatefulWidget {
   final int caseId;
+  final Function(bool) onSave; // Callback function
 
-  const StepsCase({super.key, required this.caseId});
+  const StepsCase({super.key, required this.caseId, required this.onSave});
 
   @override
   State<StepsCase> createState() => _StepsCaseState();
@@ -75,13 +76,16 @@ class _StepsCaseState extends State<StepsCase> {
 
       _fetchCaseHistory(); // Refresh case history after saving
 
+      widget.onSave(true); // Trigger the callback to refresh the parent page
+
+      Navigator.pop(context, true); // Pass `true` to indicate refresh
+
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: ${e.toString()}")),
       );
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

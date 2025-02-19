@@ -4,8 +4,9 @@ import '../Database/database_helper.dart';
 
 class AddNotes extends StatefulWidget {
   final int caseId; // Accept caseId
+  final Function(bool) onSave; // Callback function
 
-  const AddNotes({super.key, required this.caseId});
+  const AddNotes({super.key, required this.caseId, required this.onSave});
 
   @override
   State<AddNotes> createState() => _AddNotesState();
@@ -25,6 +26,8 @@ class _AddNotesState extends State<AddNotes> {
     if (noteText.isNotEmpty) {
       await db.saveCaseNote(widget.caseId, noteText);
       _disposeNoteController.clear();
+      widget.onSave(true);
+      Navigator.pop(context, true);
       print(noteText);
     }
   }

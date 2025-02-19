@@ -13,9 +13,9 @@ final db = DatabaseHelper.instance;
 class CaseDetailsPage extends StatefulWidget {
   final Map<String, dynamic> caseItem;
   final int caseId; // Accept caseId
+  final bool disposeFlag;  // Add the flag here
 
-
-  CaseDetailsPage({Key? key, required this.caseItem, required this.caseId}) : super(key: key);
+  CaseDetailsPage({Key? key, required this.caseItem, required this.caseId, required this.disposeFlag}) : super(key: key);
 
   @override
   State<CaseDetailsPage> createState() => _CaseDetailsPageState();
@@ -38,6 +38,8 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
       _notesList = notes;
     });
   }
+
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -230,11 +232,23 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
           left: 0,
           right: 0,
           child: Center(
-            child: ElevatedButton(
+            child: widget.disposeFlag  // Check if the flag is true
+                ? ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => StepsCase(caseId: caseId)),
+                  MaterialPageRoute(
+                    builder: (context) => StepsCase(
+                      caseId: widget.caseId,
+                      onSave: (refresh) {
+                        if (refresh) {
+                          setState(() {
+                            _fetchNotes();
+                          });
+                        }
+                      },
+                    ),
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -247,9 +261,10 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                 child: Text("Add Step", style: TextStyle(fontSize: 16, color: Colors.white)),
               ),
-            ),
+            )
+                : Container(),  // If flag is false, don't show anything
           ),
-        ),
+        )
       ],
     );
   }
@@ -347,11 +362,23 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          child: ElevatedButton(
+          child: widget.disposeFlag
+              ? ElevatedButton(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AddNotes(caseId: caseId)),
+                MaterialPageRoute(
+                  builder: (context) => AddNotes(
+                    caseId: widget.caseId,
+                    onSave: (refresh) {
+                      if (refresh) {
+                        setState(() {
+                          _fetchNotes();
+                        });
+                      }
+                    },
+                  ),
+                ),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -362,8 +389,9 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
               padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
               child: Text("Add Note", style: TextStyle(fontSize: 16, color: Colors.white)),
             ),
-          ),
-        ),
+          )
+              : const SizedBox.shrink(), // This prevents empty space when the button is hidden
+        )
       ],
     );
   }
@@ -389,11 +417,12 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
           _detailRow("Contact", caseItem['adverse_advocate_contact'] ?? 'Unknown Contact'), // Null check here
           const SizedBox(height: 30),
           Center(
-            child: ElevatedButton(
+            child: widget.disposeFlag  // Check the flag here
+                ? ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => DisposeCases(caseId: caseItem['case_id'] ?? 0)), // Null check here
+                  MaterialPageRoute(builder: (context) => DisposeCases(caseId: widget.caseItem['case_id'] ?? 0)),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -406,8 +435,11 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                 child: Text("Dispose", style: TextStyle(fontSize: 16, color: Colors.white)),
               ),
-            ),
+            )
+                : Container(),  // If flag is false, don't show anything
+            // If flag is false, don't show anything
           ),
+
         ],
       ),
     );

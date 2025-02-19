@@ -19,7 +19,6 @@ class CaseModel {
   final String adverseAdvocateContact;
   final String lastAdjournDate;
   final int isDisposed;
-  final String userId; // Add user_id field
 
   CaseModel({
     required this.caseId,
@@ -37,9 +36,9 @@ class CaseModel {
     required this.adverseAdvocateContact,
     required this.lastAdjournDate,
     required this.isDisposed,
-    required this.userId, // Add user_id to the constructor
   });
 
+  // Convert database row (Map) to CaseModel object
   factory CaseModel.fromMap(Map<String, dynamic> map) {
     return CaseModel(
       caseId: map['case_id'],
@@ -57,10 +56,10 @@ class CaseModel {
       adverseAdvocateContact: map['adverse_advocate_contact'],
       lastAdjournDate: map['last_adjourn_date'],
       isDisposed: map['is_disposed'],
-      userId: map['user_id'], // Make sure user_id is retrieved
     );
   }
 
+  // Convert CaseModel object to Map (for inserting/updating database)
   Map<String, dynamic> toMap() {
     return {
       'case_id': caseId,
@@ -78,7 +77,6 @@ class CaseModel {
       'adverse_advocate_contact': adverseAdvocateContact,
       'last_adjourn_date': lastAdjournDate,
       'is_disposed': isDisposed,
-      'user_id': userId, // Make sure user_id is stored
     };
   }
 }
@@ -181,7 +179,9 @@ class _CasesState extends State<Cases> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CaseDetailsPage(caseItem: caseItem, caseId: int.parse(caseItem['case_id'].toString()),),
+            builder: (context) => CaseDetailsPage(caseItem: caseItem, caseId: int.parse(caseItem['case_id'].toString()),
+              disposeFlag: true,  // Pass the flag value
+            ),
           ),
         );
       },
