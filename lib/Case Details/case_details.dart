@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:lawyer_diary/Case%20Details/add_notes.dart';
 import 'package:lawyer_diary/Case%20Details/steps_case.dart';
 import 'package:path/path.dart';
+import 'package:share_plus/share_plus.dart';
 import '../add_cases.dart';
 import '../color.dart';
 import '../Database/database_helper.dart';
@@ -37,6 +38,55 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
     setState(() {
       _notesList = notes;
     });
+  }
+
+  void _shareCaseDetails() {
+    String caseDetails = """
+📌 Case Details
+-----------------------
+🔹 Case Title: ${widget.caseItem['case_title'] ?? 'N/A'}
+🔹 Court Name: ${widget.caseItem['court_name'] ?? 'N/A'}
+🔹 Case Number/Year: ${widget.caseItem['case_number'] ?? 'N/A'} / ${widget.caseItem['case_year'] ?? 'N/A'}
+🔹 Case Type: ${widget.caseItem['case_type'] ?? 'N/A'}
+🔹 Section: ${widget.caseItem['section'] ?? 'N/A'}
+
+👥 Party Details
+-----------------------
+🔸 Party Name: ${widget.caseItem['party_name'] ?? 'N/A'}
+🔸 Contact: ${widget.caseItem['contact'] ?? 'N/A'}
+
+⚖️ Adverse Party
+-----------------------
+🔸 Name: ${widget.caseItem['adverse_advocate_name'] ?? 'N/A'}
+🔸 Contact: ${widget.caseItem['adverse_advocate_contact'] ?? 'N/A'}
+
+📅 Last Adjourn Date: ${widget.caseItem['last_adjourn_date'] ?? 'N/A'}
+📌 Disposed: ${widget.caseItem['is_disposed'] == 1 ? 'Yes' : 'No'}
+""";
+
+    Share.share(caseDetails);
+  }
+
+  Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
+    return await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Confirm Delete"),
+          content: const Text("Are you sure you want to delete this case? This action cannot be undone."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false), // Cancel
+              child: const Text("No"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true), // Confirm
+              child: const Text("Yes", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
   }
 
 
@@ -76,16 +126,26 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                   },
                   visualDensity: VisualDensity.compact,
                 ),
+
                 IconButton(
                   icon: const Icon(Icons.share, color: Colors.white),
-                  onPressed: () {},
+                  onPressed: () {
+                    _shareCaseDetails();
+                  },
                   visualDensity: VisualDensity.compact,
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.white),
-                  onPressed: () {},
+                  onPressed: () async {
+                    bool confirmDelete = await _showDeleteConfirmationDialog(context);
+                    if (confirmDelete) {
+                      await db.deleteCase(widget.caseId); // Delete from database
+                      Navigator.popUntil(context, (route) => route.isFirst); // Go back to Home
+                    }
+                  },
                   visualDensity: VisualDensity.compact,
                 ),
+
               ],
             ),
           ],
@@ -397,50 +457,62 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
   }
 
   Widget _caseTab(BuildContext context, Map<String, dynamic> caseItem) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle(caseItem['case_title'] ?? 'Unknown Case Title'), // Null check here
-          _detailRow("Court", caseItem['court_name'] ?? 'Unknown Court'), // Null check here
-          _detailRow("Case No./Year", "${caseItem['case_number'] ?? 'N/A'}/${caseItem['case_year'] ?? 'N/A'}"), // Null check here
-          _detailRow("Type", caseItem['case_type'] ?? 'Unknown Type'), // Null check here
-          _detailRow("Filed U/sec", caseItem['section'] ?? 'Unknown Section'), // Null check here
-          const SizedBox(height: 16),
-          _sectionTitle("Party"),
-          _detailRow("Name", caseItem['party_name'] ?? 'Unknown Party'), // Null check here
-          _detailRow("Contact", caseItem['contact'] ?? 'Unknown Contact'), // Null check here
-          const SizedBox(height: 16),
-          _sectionTitle("Adverse Party"),
-          _detailRow("Name", caseItem['adverse_advocate_name'] ?? 'Unknown Adverse Party'), // Null check here
-          _detailRow("Contact", caseItem['adverse_advocate_contact'] ?? 'Unknown Contact'), // Null check here
-          const SizedBox(height: 30),
-          Center(
-            child: widget.disposeFlag  // Check the flag here
-                ? ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => DisposeCases(caseId: widget.caseItem['case_id'] ?? 0)),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade800,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+    return Card(
+      margin: const EdgeInsets.all(12.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sectionTitle(caseItem['case_title'] ?? 'Unknown Case Title'),
+              _detailRow("Court", caseItem['court_name'] ?? 'Unknown Court'),
+              _detailRow("Case No./Year", "${caseItem['case_number'] ?? 'N/A'}/${caseItem['case_year'] ?? 'N/A'}"),
+              _detailRow("Type", caseItem['case_type'] ?? 'Unknown Type'),
+              _detailRow("Filed U/sec", caseItem['section'] ?? 'Unknown Section'),
+              const SizedBox(height: 16),
+              _sectionTitle("Party"),
+              _detailRow("Name", caseItem['party_name'] ?? 'Unknown Party'),
+              _detailRow("Contact", caseItem['contact'] ?? 'Unknown Contact'),
+              const SizedBox(height: 16),
+              _sectionTitle("Adverse Party"),
+              _detailRow("Name", caseItem['adverse_advocate_name'] ?? 'Unknown Adverse Party'),
+              _detailRow("Contact", caseItem['adverse_advocate_contact'] ?? 'Unknown Contact'),
+              const SizedBox(height: 30),
+              Center(
+                child: widget.disposeFlag
+                    ? ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            DisposeCases(caseId: caseItem['case_id'] ?? 0),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade800,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Padding(
+                    padding:
+                    EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    child: Text("Dispose",
+                        style: TextStyle(fontSize: 16, color: Colors.white)),
+                  ),
+                )
+                    : Container(),
               ),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                child: Text("Dispose", style: TextStyle(fontSize: 16, color: Colors.white)),
-              ),
-            )
-                : Container(),  // If flag is false, don't show anything
-            // If flag is false, don't show anything
+            ],
           ),
-
-        ],
+        ),
       ),
     );
   }

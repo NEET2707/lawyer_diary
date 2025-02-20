@@ -40,10 +40,18 @@ dependencies:
   sqflite: ^2.4.1
   path: ^1.9.0
   path_provider: ^2.1.5
+  share_plus: ^10.1.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.3
+  flutter_lints: ^4.0.0  # Moved under dev_dependencies
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/image/lawyer1.jpg"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

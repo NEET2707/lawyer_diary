@@ -17,6 +17,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
         title: 'Lawyer Diary',
         debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: false
+      ),
       home: Home(),
     );
   }

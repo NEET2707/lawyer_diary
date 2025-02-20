@@ -137,6 +137,11 @@ class DatabaseHelper {
     return await db.query(tblcaseinfo);
   }
 
+  Future<int> deleteCase(int caseId) async {
+    final db = await database;
+    return await db.delete('caseinfo', where: 'case_id = ?', whereArgs: [caseId]);
+  }
+
   Future<void> saveDisposedCase(int caseId, String disposedNature, DateTime disposedDate) async {
     final db = await DatabaseHelper.instance.database;
 

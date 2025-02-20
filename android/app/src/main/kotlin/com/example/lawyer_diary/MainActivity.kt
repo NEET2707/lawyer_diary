@@ -1,4 +1,4 @@
-package com.example.lawyer_diary
+package com.gnhub.lawyer.diary
 
 import io.flutter.embedding.android.FlutterActivity
 

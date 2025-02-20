@@ -29,14 +29,26 @@ class _HomeState extends State<Home> {
     fetchTotalRecords();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    fetchTotalRecords(); // Refresh counts when page is revisited
+  }
 
   Future<void> fetchTotalRecords() async {
-    totalcase = await DatabaseHelper.instance.getCountExcludingDisposedCases();
-    totaldispose = await DatabaseHelper.instance.countDisposedCases();
-    count = await DatabaseHelper.instance.countRecordsWithTodayAdjournDate();
-    print('Total records where adjourn_date is today: $count');
-    print('Total records in caseinfo table: $totalcase');
-    print('Total records in caseinfo table: $totaldispose');
+    int cases = await DatabaseHelper.instance.getCountExcludingDisposedCases();
+    int disposed = await DatabaseHelper.instance.countDisposedCases();
+    int reminders = await DatabaseHelper.instance.countRecordsWithTodayAdjournDate();
+
+    setState(() {
+      totalcase = cases;
+      totaldispose = disposed;
+      count = reminders;
+    });
+
+    print('Total cases: $totalcase');
+    print('Disposed cases: $totaldispose');
+    print('Today’s reminders: $count');
   }
 
 
@@ -61,111 +73,119 @@ class _HomeState extends State<Home> {
           )
         ],
       ),
-      body: ListView(
-        padding: EdgeInsets.all(16.0),
-        children: [
-          // _buildHomeCard(icon: Icons.manage_search_sharp,
-          //   title: "Cases",
-          //   subtitle: "Clik to View All Cases",
-          //   onTap: (){
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(builder: (context) => Cases()),
-          //     );
-          //   }
-          // ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await fetchTotalRecords(); // Correct function call
+        },        child: ListView(
+          padding: EdgeInsets.all(16.0),
+          children: [
+            // _buildHomeCard(icon: Icons.manage_search_sharp,
+            //   title: "Cases",
+            //   subtitle: "Clik to View All Cases",
+            //   onTap: (){
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(builder: (context) => Cases()),
+            //     );
+            //   }
+            // ),
 
 
-          Card(
-            color: Colors.white,
-            elevation: 1,
-            margin: EdgeInsets.only(bottom: 12.0),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
+            Card(
+              color: Colors.white,
+              elevation: 1,
+              margin: EdgeInsets.only(bottom: 12.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              child: ListTile(
+                leading: Icon(Icons.manage_search_sharp, size: 40, color: Colors.blue.shade900),
+                title: Text("Cases", style: TextStyle(fontWeight: FontWeight.bold , fontSize: 16)),
+                subtitle: Text("Clik to View All Cases", style: TextStyle(fontSize: 14   )),
+                onTap: (){
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Cases()),
+                    );
+                  },
+                trailing: CircleAvatar(
+                  backgroundColor: Colors.blue.shade900,
+                  child: Text(totalcase.toString(),style: TextStyle(color: Colors.white),),
+                ),// Display the trailing widget here
+              ),
             ),
-            child: ListTile(
-              leading: Icon(Icons.manage_search_sharp, size: 40, color: Colors.blue.shade900),
-              title: Text("Cases", style: TextStyle(fontWeight: FontWeight.bold , fontSize: 16)),
-              subtitle: Text("Clik to View All Cases", style: TextStyle(fontSize: 14   )),
-              onTap: (){
+
+            _buildHomeCard(icon: Icons.bookmark_remove_sharp,
+                title: "Disoposed Cases",
+                subtitle: "Clik to View All Disoposed Cases List",
+                onTap: (){
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => Cases()),
+                    MaterialPageRoute(builder: (context) => DisposedCases()),
                   );
-                }, 
-              trailing: CircleAvatar(
-                child: Text(totalcase.toString()),
-              ),// Display the trailing widget here
+                },
+              trailingWidget: CircleAvatar(
+                backgroundColor: Colors.blue.shade900,
+                child: Text(totaldispose.toString(),style: TextStyle(color: Colors.white),))
             ),
-          ),
+            _buildHomeCard(icon: Icons.add_box_outlined,
+                title: "Add Cases",
+                subtitle: "Clik to Add Cases Details",
+                onTap: (){
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => AddCases()),
+                    );
+                }
+            ),
 
-          _buildHomeCard(icon: Icons.bookmark_remove_sharp,
-              title: "Disoposed Cases",
-              subtitle: "Clik to View All Disoposed Cases List",
-              onTap: (){
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => DisposedCases()),
-                );
-              },
-            trailingWidget: CircleAvatar(child: Text(totaldispose.toString()),)
-          ),
-          _buildHomeCard(icon: Icons.add_box_outlined,
-              title: "Add Cases",
-              subtitle: "Clik to Add Cases Details",
-              onTap: (){
+            _buildHomeCard(icon: Icons.maps_home_work_outlined,
+                title: "Manage Court",
+                subtitle: "Clik to Manage Court List",
+                onTap: (){
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => AddCases()),
+                    MaterialPageRoute(builder: (context) => ManageCourt()),
                   );
-              }
-          ),
+                }
+                ),
 
-          _buildHomeCard(icon: Icons.maps_home_work_outlined,
-              title: "Manage Court",
-              subtitle: "Clik to Manage Court List",
-              onTap: (){
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ManageCourt()),
-                );
-              }
+            _buildHomeCard(icon: Icons.cases_rounded,
+                title: "Manage CaseType",
+                subtitle: "Clik to Manage CaseType List",
+                onTap: (){
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ManageCaseType()),
+                  );
+                }           ),
+
+            _buildHomeCard(icon: Icons.punch_clock,
+                title: "Reminder Cases",
+                subtitle: "Clik to View All Reminder Cases",
+                onTap: (){
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ReminderPage()),
+                  );
+                },
+              trailingWidget:  CircleAvatar(
+                backgroundColor: Colors.blue.shade900,
+                child: Text(count.toString(),style: TextStyle(color: Colors.white),),
+              ),
               ),
 
-          _buildHomeCard(icon: Icons.cases_rounded,
-              title: "Manage CaseType",
-              subtitle: "Clik to Manage CaseType List",
-              onTap: (){
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ManageCaseType()),
-                );
-              }           ),
-
-          _buildHomeCard(icon: Icons.punch_clock,
-              title: "Reminder Cases",
-              subtitle: "Clik to View All Reminder Cases",
-              onTap: (){
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ReminderPage()),
-                );
-              },
-            trailingWidget:  CircleAvatar(
-              child: Text(count.toString()),
-            ),
-            ),
-
-          _buildHomeCard(icon: Icons.restore,
-              title: "Lawyer Diary Backup",
-              subtitle: "Back Up/ Restore Your Case Entries",
-              onTap: (){
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => Backup()),
-                // );
-              }             ),
-        ],
+            _buildHomeCard(icon: Icons.restore,
+                title: "Lawyer Diary Backup",
+                subtitle: "Back Up/ Restore Your Case Entries",
+                onTap: (){
+                  // Navigator.push(
+                  //   context,
+                  //   MaterialPageRoute(builder: (context) => Backup()),
+                  // );
+                }             ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: themecolor,

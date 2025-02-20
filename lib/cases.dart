@@ -129,14 +129,17 @@ class _CasesState extends State<Cases> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(),
-      body: _filteredCases.isEmpty
-          ? const Center(child: Text("No cases found"))
-          : ListView.builder(
-        itemCount: _filteredCases.length,
-        itemBuilder: (context, index) {
-          final caseItem = _filteredCases[index];
-          return _buildCaseCard(caseItem);
-        },
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: _filteredCases.isEmpty
+            ? const Center(child: Text("No cases found"))
+            : ListView.builder(
+          itemCount: _filteredCases.length,
+          itemBuilder: (context, index) {
+            final caseItem = _filteredCases[index];
+            return _buildCaseCard(caseItem);
+          },
+        ),
       ),
     );
   }
@@ -179,42 +182,115 @@ class _CasesState extends State<Cases> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CaseDetailsPage(caseItem: caseItem, caseId: int.parse(caseItem['case_id'].toString()),
+            builder: (context) => CaseDetailsPage(
+              caseItem: caseItem,
+              caseId: int.parse(caseItem['case_id'].toString()),
               disposeFlag: true,  // Pass the flag value
             ),
           ),
         );
       },
       child: Card(
-        margin: const EdgeInsets.all(8.0),
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
         ),
-        elevation: 3,
+        elevation: 2,
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _titleRow(caseItem),
-              const SizedBox(height: 8),
-              _detailRow(Icons.gavel, "Court", caseItem['court_name']),
-              _detailRow(Icons.confirmation_number, "Case #", "${caseItem['case_number']}/${caseItem['case_year']}"),
-              _detailRow(Icons.person, "On Behalf Of", caseItem['case_behalf_of']),
-              _detailRow(Icons.phone, "Contact No", caseItem['contact']),
-              _detailRow(Icons.people, "Respondent", caseItem['respondent_name']),
-              _detailRow(Icons.article, "Section", caseItem['section']),
-              _detailRow(Icons.account_balance, "Adverse Advocate", caseItem['adverse_advocate_name']),
-              _detailRow(Icons.phone_android, "Advocate Contact", caseItem['adverse_advocate_contact']),
-              _detailRow(Icons.event, "Last Adjourn Date", caseItem['last_adjourn_date']),
-              _detailRow(Icons.check_circle, "Disposed", caseItem['is_disposed'] == 1 ? "Yes" : "No"),
+              // Case Title Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    caseItem['case_title'],
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+              const SizedBox(height: 5),
+
+              // Court and Case Number Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _boldText("Court", caseItem['court_name']),
+                  _boldText("Case Type", caseItem['case_type']),
+                  _boldText("Case#", "${caseItem['case_number']}/${caseItem['case_year']}"),
+                ],
+              ),
               const SizedBox(height: 10),
+
+              // Party Info
+              Row(
+                children: [
+                  const Icon(Icons.person, size: 20, color: Colors.black54),
+                  const SizedBox(width: 6),
+                  Text(
+                    caseItem['party_name'],
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    caseItem['contact'],
+                    style: const TextStyle(color: Colors.blue, fontSize: 14),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 5),
+
+              // On Behalf Of
+              _detailRow("On Behalf Of", caseItem['case_behalf_of']),
+
+              // Previous and Adjourn Date
+              _detailRow("Previous Date", "-"), // Update if available
+              _detailRow("Adjourn Date", caseItem['last_adjourn_date']),
+
+              // Steps
+              _detailRow("Steps", "no steps"), // Update dynamically if needed
             ],
           ),
         ),
       ),
     );
   }
+
+// Helper method for bold label and value in a row
+  Widget _boldText(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        ),
+        Text(value, style: const TextStyle(fontSize: 14)),
+      ],
+    );
+  }
+
+// Helper method for detail rows
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(width: 8),
+          Text(value.isNotEmpty ? value : "-", style: const TextStyle(color: Colors.black54)),
+        ],
+      ),
+    );
+  }
+
 
   Widget _titleRow(Map<String, dynamic> caseItem) {
     return Row(
@@ -229,23 +305,5 @@ class _CasesState extends State<Cases> {
     );
   }
 
-  Widget _detailRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey),
-          const SizedBox(width: 8),
-          Text(
-            "$label: ",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          Expanded(
-            child: Text(value, overflow: TextOverflow.ellipsis),
-          ),
-        ],
-      ),
-    );
-  }
 
 }
