@@ -36,7 +36,7 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
   Future<void> _fetchNotes() async {
     List<Map<String, dynamic>> notes = await db.fetchCaseNotes(widget.caseId);
     setState(() {
-      _notesList = notes;
+      _notesList = List<Map<String, dynamic>>.from(notes); // Make a mutable copy
     });
   }
 
@@ -169,7 +169,7 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
             } else if (snapshot.hasError) {
               return Center(child: Text("Error: ${snapshot.error}"));
             } else {
-              List<Map<String, dynamic>> caseHistory = snapshot.data ?? [];
+              List<Map<String, dynamic>> caseHistory = List<Map<String, dynamic>>.from(snapshot.data ?? []);
 
               return TabBarView(
                 children: [
@@ -187,6 +187,9 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
   }
 
   Widget _stepsTab(BuildContext context, List<Map<String, dynamic>> caseHistory, int caseId) {
+    // ✅ Ensure the list is in insertion order (oldest first)
+    caseHistory = List<Map<String, dynamic>>.from(caseHistory.reversed);
+
     return Stack(
       children: [
         Column(
@@ -216,7 +219,10 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                     ...List.generate(caseHistory.length, (index) {
                       var step = caseHistory[index];
 
-                      String? previousDate = index > 0 ? caseHistory[index - 1]['adjourn_date'] : null;
+                      String? previousDate = index > 0
+                          ? caseHistory[index - 1]['adjourn_date']
+                          : null;
+
                       String formattedAdjournDate = DateFormat('yyyy-MM-dd').format(DateTime.parse(step['adjourn_date']));
                       String? formattedPreviousDate = previousDate != null
                           ? DateFormat('yyyy-MM-dd').format(DateTime.parse(previousDate))
@@ -235,7 +241,6 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                               ],
                             ),
                           ),
-
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(border: Border.all(color: Colors.black)),
@@ -248,26 +253,20 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                                     const SizedBox(width: 5),
                                     GestureDetector(
                                       onTap: () {
-                                        int stepId = step['multiplehistory_id'] ?? 0; // Ensure correct column name
+                                        int stepId = step['multiplehistory_id'] ?? 0;
                                         String stepText = step['step'] ?? '';
 
-                                        if (stepId == 0) {
-                                          print("Error: stepId is null or missing!"); // Debugging print
-                                          return;
-                                        }
+                                        if (stepId == 0) return;
 
                                         _editStepDialog(context, stepId, stepText, caseId, (updatedStep) async {
-                                          // Fetch updated data from the database
                                           List<Map<String, dynamic>> updatedCaseHistory =
                                           await DatabaseHelper.instance.fetchCaseMultipleHistory(caseId);
-
                                           setState(() {
                                             caseHistory.clear();
-                                            caseHistory.addAll(updatedCaseHistory); // Refresh UI
+                                            caseHistory.addAll(updatedCaseHistory.reversed);
                                           });
                                         });
                                       },
-
                                       child: const Icon(Icons.edit, size: 16, color: Colors.blue),
                                     ),
                                   ],
@@ -287,12 +286,13 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
           ],
         ),
 
+        // Add Step Button
         Positioned(
           bottom: 16,
           left: 0,
           right: 0,
           child: Center(
-            child: widget.disposeFlag  // Check if the flag is true
+            child: widget.disposeFlag
                 ? ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -300,10 +300,12 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                   MaterialPageRoute(
                     builder: (context) => StepsCase(
                       caseId: widget.caseId,
-                      onSave: (refresh) {
+                      onSave: (refresh) async {
                         if (refresh) {
+                          List<Map<String, dynamic>> updatedCaseHistory =
+                          await DatabaseHelper.instance.fetchCaseMultipleHistory(widget.caseId);
                           setState(() {
-                            _fetchNotes();
+                            caseHistory = List<Map<String, dynamic>>.from(updatedCaseHistory.reversed);
                           });
                         }
                       },
@@ -322,12 +324,14 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                 child: Text("Add Step", style: TextStyle(fontSize: 16, color: Colors.white)),
               ),
             )
-                : Container(),  // If flag is false, don't show anything
+                : Container(),
           ),
         )
       ],
     );
   }
+
+
 
 
   void _editStepDialog(BuildContext context, int stepId, String stepText, int caseId, Function(String) onSave) {
@@ -397,8 +401,26 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                     trailing: PopupMenuButton<String>(
                       onSelected: (value) async {
                         if (value == 'edit') {
-                          String currentNote = _notesList[index]["note_text"] ?? ''; // Null check here
-                          // Proceed with edit
+                          String currentNote = _notesList[index]["note"] ?? ''; // Fetch current note text
+                          int noteId = _notesList[index]["notes_id"]; // Fetch note ID
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AddNotes(
+                                caseId: widget.caseId,
+                                noteId: noteId, // Pass noteId for editing
+                                existingNote: currentNote, // Pass existing note text
+                                onSave: (refresh) {
+                                  if (refresh) {
+                                    setState(() {
+                                      _fetchNotes(); // Refresh notes list
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                          );
                         } else if (value == 'delete') {
                           bool confirmDelete = await showDeleteConfirmationDialog(context);
                           if (confirmDelete) {
@@ -406,6 +428,11 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                             setState(() {
                               _notesList.removeAt(index);
                             });
+                            setState(() {
+
+                            });
+                            print(_notesList);
+                            print("666666666666666666666666666666666666666");
                           }
                         }
                       },
@@ -414,6 +441,7 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                         const PopupMenuItem(value: 'delete', child: Text('Delete')),
                       ],
                     ),
+
                   ),
                 ),
               );

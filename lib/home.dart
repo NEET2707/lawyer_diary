@@ -131,11 +131,15 @@ class _HomeState extends State<Home> {
             _buildHomeCard(icon: Icons.add_box_outlined,
                 title: "Add Cases",
                 subtitle: "Clik to Add Cases Details",
-                onTap: (){
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => AddCases()),
-                    );
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AddCases()),
+                  ).then((result) {
+                    if (result == true) {
+                      fetchTotalRecords(); // Only refresh if a case was actually added
+                    }
+                  });
                 }
             ),
 
@@ -190,13 +194,17 @@ class _HomeState extends State<Home> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: themecolor,
         shape: CircleBorder(),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AddCases()),
-          );
-        },
-        child: Icon(Icons.add, color: Colors.white),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AddCases()),
+            ).then((result) {
+              if (result == true) {
+                fetchTotalRecords(); // Only refresh if a case was actually added
+              }
+            });
+          },
+          child: Icon(Icons.add, color: Colors.white),
       ),    );
   }
 }

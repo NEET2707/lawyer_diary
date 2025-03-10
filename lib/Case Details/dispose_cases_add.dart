@@ -3,6 +3,7 @@ import 'package:lawyer_diary/color.dart';
 import 'package:lawyer_diary/home.dart';
 import '../Database/database_helper.dart';
 
+import '../cases.dart';
 import '../extra.dart';
 
 class DisposeCases extends StatefulWidget {
@@ -134,20 +135,17 @@ class _DisposeCasesState extends State<DisposeCases> {
     );
 
     if (confirm == true) {
-      // Save disposed case details
       await DatabaseHelper.instance.saveDisposedCase(widget.caseId, disposeNote, _selectedDate!);
 
-      // Mark case as disposed in the caseinfo table
       await DatabaseHelper.instance.updateCaseAsDisposed(widget.caseId);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Case disposed successfully!")),
       );
 
-      // Navigate to home page
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => Home()),
+        MaterialPageRoute(builder: (context) => Cases()),
             (route) => false,
       );
     }

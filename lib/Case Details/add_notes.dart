@@ -3,10 +3,18 @@ import '../color.dart';
 import '../Database/database_helper.dart';
 
 class AddNotes extends StatefulWidget {
-  final int caseId; // Accept caseId
-  final Function(bool) onSave; // Callback function
+  final int caseId;
+  final int? noteId; // Nullable note ID (for edit mode)
+  final String? existingNote; // Nullable existing note
+  final Function(bool) onSave;
 
-  const AddNotes({super.key, required this.caseId, required this.onSave});
+  const AddNotes({
+    super.key,
+    required this.caseId,
+    required this.onSave,
+    this.noteId, // Optional
+    this.existingNote, // Optional
+  });
 
   @override
   State<AddNotes> createState() => _AddNotesState();
@@ -19,18 +27,30 @@ class _AddNotesState extends State<AddNotes> {
   @override
   void initState() {
     super.initState();
+    if (widget.existingNote != null) {
+      _disposeNoteController.text = widget.existingNote!;
+    }
   }
+
 
   Future<void> _saveCase() async {
     String noteText = _disposeNoteController.text.trim();
     if (noteText.isNotEmpty) {
-      await db.saveCaseNote(widget.caseId, noteText);
+      if (widget.noteId != null) {
+        // Update existing note
+        await db.updateNote(widget.noteId!, noteText);
+      } else {
+        // Insert new note
+        await db.saveCaseNote(widget.caseId, noteText);
+      }
+
       _disposeNoteController.clear();
       widget.onSave(true);
       Navigator.pop(context, true);
-      print(noteText);
     }
   }
+
+
 
 
 

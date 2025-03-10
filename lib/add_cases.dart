@@ -115,7 +115,7 @@ class _AddCasesState extends State<AddCases> {
       await db.update("caseinfo", caseData, where: "case_id = ?", whereArgs: [widget.caseItem!["case_id"]]);
     }
 
-    Navigator.pop(context);
+    Navigator.pop(context,true);
   }
 
   Future<void> _showInputDialog(String title, Function(String) onSubmit) async {

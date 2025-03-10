@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:lawyer_diary/home.dart';
 import 'Case Details/case_details.dart';
 import 'Database/database_helper.dart';
 import 'color.dart';
@@ -92,6 +94,7 @@ class _CasesState extends State<Cases> {
   List<Map<String, dynamic>> _cases = [];
   TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredCases = [];
+  DateTime? _selectedDate;
 
   @override
   void initState() {
@@ -124,6 +127,58 @@ class _CasesState extends State<Cases> {
     return await DatabaseHelper.instance.getOngoingCases();
   }
 
+  Future<void> _pickDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+
+        // Format the date as dd/MM/yyyy
+        String formattedDate = DateFormat('dd/MM/yyyy').format(_selectedDate!);
+        print("📅 Selected Date: $formattedDate");
+
+        _filterByAdjournDate();
+      });
+    }
+  }
+
+
+  void _filterByAdjournDate() {
+    if (_selectedDate == null) {
+      _filteredCases = _cases;
+      return;
+    }
+
+    String formattedSelected = DateFormat('dd/MM/yyyy').format(_selectedDate!);
+    print("Selected: $formattedSelected");
+
+    setState(() {
+      _filteredCases = _cases.where((caseItem) {
+        String caseDateString = caseItem['last_adjourn_date'];
+
+        try {
+          DateTime caseDate = DateTime.parse(caseDateString);
+          String formattedCaseDate = DateFormat('dd/MM/yyyy').format(caseDate);
+
+          print("Comparing: $formattedCaseDate with $formattedSelected");
+
+          return formattedCaseDate == formattedSelected;
+        } catch (e) {
+          print("Invalid date: $caseDateString");
+          return false;
+        }
+      }).toList();
+    });
+  }
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -151,26 +206,59 @@ class _CasesState extends State<Cases> {
       backgroundColor: themecolor,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
-        onPressed: () => Navigator.pop(context),
+        onPressed: (){
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>Home()));
+        },
       ),
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(60),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          child: TextField(
-            controller: _searchController,
-            onChanged: _filterCases,
-            decoration: InputDecoration(
-              hintText: "Search",
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
+
+        child: Row(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 10,bottom: 5),
+                child: SizedBox(
+                  height: 40,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _filterCases,
+                    decoration: InputDecoration(
+                      hintText: "Search",
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      isDense: true, // Reduces vertical height
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
+            SizedBox(
+              width: 10,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: InkWell(
+                onTap: () => _pickDate(context),
+                child: const Icon(Icons.date_range_sharp, color: Colors.white, size: 40),
+              ),
+            ),
+            if (_selectedDate != null)
+              IconButton(
+                icon: const Icon(Icons.clear, color: Colors.white),
+                onPressed: () {
+                  setState(() {
+                    _selectedDate = null;
+                    _filteredCases = _cases;
+                  });
+                },
+              ),
+            SizedBox(
+              width: 20,
+            ),
+          ],
         ),
       ),
     );
@@ -249,7 +337,13 @@ class _CasesState extends State<Cases> {
 
               // Previous and Adjourn Date
               _detailRow("Previous Date", "-"), // Update if available
-              _detailRow("Adjourn Date", caseItem['last_adjourn_date']),
+              _detailRow(
+                "Adjourn Date",
+                caseItem['last_adjourn_date'] != null
+                    ? DateFormat('dd/MM/yyyy').format(DateTime.parse(caseItem['last_adjourn_date']))
+                    : 'N/A',
+              ),
+
 
               // Steps
               _detailRow("Steps", "no steps"), // Update dynamically if needed
