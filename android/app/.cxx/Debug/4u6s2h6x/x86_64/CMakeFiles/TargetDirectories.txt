@@ -1,0 +1,2 @@
+D:/lawyer_diary/android/app/.cxx/Debug/4u6s2h6x/x86_64/CMakeFiles/edit_cache.dir
+D:/lawyer_diary/android/app/.cxx/Debug/4u6s2h6x/x86_64/CMakeFiles/rebuild_cache.dir

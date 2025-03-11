@@ -106,6 +106,7 @@ class _StepsCaseState extends State<StepsCase> {
                 const SizedBox(width: 40),
                 Expanded(
                   child: TextField(
+                    textCapitalization: TextCapitalization.sentences,
                     controller: _disposeNoteController,
                     maxLines: 3,
                     decoration: const InputDecoration(

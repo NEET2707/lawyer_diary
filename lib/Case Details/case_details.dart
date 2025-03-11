@@ -101,7 +101,7 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
           backgroundColor: themecolor,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context,true),
           ),
           actions: [
             Row(
@@ -116,13 +116,21 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.edit, color: Colors.white),
-                  onPressed: () {
-                    Navigator.push(
+                  onPressed: () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => AddCases(caseItem: widget.caseItem),
                       ),
                     );
+
+                    if (result == true) {
+                      final updatedCase = await DatabaseHelper.instance.fetchCaseById(widget.caseId);
+                      setState(() {
+                        widget.caseItem.clear();
+                        widget.caseItem.addAll(updatedCase);
+                      });
+                    }
                   },
                   visualDensity: VisualDensity.compact,
                 ),
@@ -140,7 +148,8 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
                     bool confirmDelete = await _showDeleteConfirmationDialog(context);
                     if (confirmDelete) {
                       await db.deleteCase(widget.caseId); // Delete from database
-                      Navigator.popUntil(context, (route) => route.isFirst); // Go back to Home
+                      Navigator.pop(context,true);
+                      Navigator.pop(context,true);
                     }
                   },
                   visualDensity: VisualDensity.compact,
@@ -511,33 +520,54 @@ class _CaseDetailsPageState extends State<CaseDetailsPage> {
               _detailRow("Name", caseItem['adverse_advocate_name'] ?? 'Unknown Adverse Party'),
               _detailRow("Contact", caseItem['adverse_advocate_contact'] ?? 'Unknown Contact'),
               const SizedBox(height: 30),
-              Center(
-                child: widget.disposeFlag
-                    ? ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            DisposeCases(caseId: caseItem['case_id'] ?? 0),
+              if ((caseItem['is_disposed'] ?? 0) == 1)
+              // Show disposed label if case is disposed
+                if (widget.caseItem['is_disposed'] == 1)
+                  Center(
+                    child: Text(
+                      "Note: This case is disposed",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade800,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Padding(
-                    padding:
-                    EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                    child: Text("Dispose",
-                        style: TextStyle(fontSize: 16, color: Colors.white)),
+
+// Show Dispose button if case is NOT disposed
+              if (widget.caseItem['is_disposed'] != 1)
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      bool? result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DisposeCases(caseId: widget.caseItem['case_id'] ?? 0),
+                        ),
+                      );
+
+                      if (result == true) {
+                        // Refresh the UI: fetch updated case and update state
+                        final updatedCase = await DatabaseHelper.instance.fetchCaseById(widget.caseId);
+                        setState(() {
+                          widget.caseItem.clear();
+                          widget.caseItem.addAll(updatedCase);
+                        });
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade800,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                      child: Text("Dispose", style: TextStyle(fontSize: 16, color: Colors.white)),
+                    ),
                   ),
-                )
-                    : Container(),
-              ),
+                ),
+
             ],
           ),
         ),

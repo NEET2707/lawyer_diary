@@ -1,7 +1,14 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../cases.dart';
+import 'package:saf_util/saf_util.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:csv/csv.dart';
+import 'package:saf_stream/saf_stream.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -373,146 +380,145 @@ class DatabaseHelper {
     );
   }
 
+  Future<Map<String, dynamic>> fetchCaseById(int caseId) async {
+    final db = await database;
+    final result = await db.query('caseinfo', where: 'case_id = ?', whereArgs: [caseId]);
+    return result.isNotEmpty ? result.first : {};
+  }
 
-  /// **Request Storage Permission (for Android 13 and below)**
-  // static Future<bool> requestStoragePermission() async {
-  //   if (await Permission.storage.request().isGranted) {
-  //     return true;
-  //   }
-  //   if (await Permission.manageExternalStorage.request().isGranted) {
-  //     return true;
-  //   }
-  //
-  //   print("❌ Storage permission denied!");
-  //   return false;
-  // }
-  //
-  // static Future<bool> backupDatabase() async {
-  //   if (!await requestStoragePermission()) {
-  //     print("Storage permission denied!");
-  //     return false;
-  //   }
-  //   final _saf = SafUtil();
-  //   try {
-  //     String? pickedDirectory = await _saf.openDirectory();
-  //     if (pickedDirectory == null) {
-  //       print("❌ No directory selected!");
-  //       return false;
-  //     }
-  //
-  //     String filePath = "$pickedDirectory/backup.csv";
-  //
-  //     bool success = await exportToCSV(filePath);
-  //     return success;
-  //   } catch (e) {
-  //     print("❌ Error during backup: $e");
-  //     return false;
-  //   }
-  // }
-  //
-  // static Future<bool> restoreDatabase() async {
-  //   if (!await requestStoragePermission()) {
-  //     print("Storage permission denied!");
-  //     return false;
-  //   }
-  //
-  //   try {
-  //
-  //     bool success = await importFromCSV();
-  //     return success;
-  //   } catch (e) {
-  //     print("❌ Error during restore: $e");
-  //     return false;
-  //   }
-  // }
-  //
-  // Future<String?> picksafdirectory() async {
-  //   final _safUtil = SafUtil();
-  //   String? selectedDirectory = await _safUtil.openDirectory();
-  //   if (selectedDirectory == null) {
-  //     Fluttertoast.showToast(msg: "No folder selected.");
-  //     return null;
-  //   }
-  //   return selectedDirectory;
-  // }
-  //
-  // static Future<bool> exportToCSV(String filePath) async {
-  //   final _safStreamPlugin = SafStream();
-  //   final _safUtil = SafUtil();
-  //   String? selectedDirectory = await _safUtil.openDirectory();
-  //   try {
-  //     Database db = await instance.database; // Access via singleton
-  //     List<String> tables = ['caseinfo', 'casetype', 'courtlist', 'casenote', 'casemultiplehistory', 'disposedcase'];
-  //
-  //     List<List<String>> csvData = [];
-  //     for (String table in tables) {
-  //       List<Map<String, dynamic>> rows = await db.query(table);
-  //       if (rows.isNotEmpty) {
-  //         csvData.add([table]);
-  //         csvData.add(rows.first.keys.toList());
-  //         for (var row in rows) {
-  //           csvData.add(row.values.map((value) => value.toString()).toList());
-  //         }
-  //       }
-  //     }
-  //     String csv = const ListToCsvConverter().convert(csvData);
-  //     Uint8List unitdata = Uint8List.fromList(csv.codeUnits);
-  //     await _safStreamPlugin.writeFileBytes(
-  //         selectedDirectory ?? "",
-  //         "backup.csv",
-  //         "text/csv",
-  //         unitdata
-  //     );
-  //     return true;
-  //   } catch (e) {
-  //     print("❌ Error during export: $e");
-  //     return false;
-  //   }
-  // }
-  //
-  // static Future<bool> importFromCSV() async {
-  //   final _safUtil = SafUtil();
-  //   String? selectedFilePath = await _safUtil.openFile();
-  //
-  //   if (selectedFilePath == null) {
-  //     print("❌ No file selected.");
-  //     return false;
-  //   }
-  //
-  //   try {
-  //     final _safStreamPlugin = SafStream();
-  //     // Remove redundant casting
-  //     Uint8List fileBytes = (await _safStreamPlugin.readFileBytes(selectedFilePath)) as Uint8List;
-  //
-  //     String fileContent = utf8.decode(fileBytes as List<int>); // Remove unnecessary cast
-  //     List<List<dynamic>> csvData = const CsvToListConverter().convert(fileContent);
-  //
-  //     Database db = await instance.database; // Access via singleton
-  //     String? currentTable;
-  //     List<String> tables = ['caseinfo', 'casetype', 'courtlist', 'casenote', 'casemultiplehistory', 'disposedcase'];
-  //
-  //     for (int rowIndex = 0; rowIndex < csvData.length; rowIndex++) {
-  //       List<dynamic> row = csvData[rowIndex];
-  //       if (row.isEmpty) continue;
-  //
-  //       if (row.length == 1 && tables.contains(row[0].toString().trim().toLowerCase())) {
-  //         currentTable = row[0].toString().trim();
-  //       } else if (currentTable != null && rowIndex > 0) {
-  //         List<String> columns = csvData[rowIndex - 1].map((e) => e.toString()).toList();
-  //         if (columns.length <= 1) continue;
-  //
-  //         Map<String, dynamic> rowData = {};
-  //         for (int i = 0; i < columns.length; i++) {
-  //           if (i < row.length) rowData[columns[i]] = row[i];
-  //         }
-  //         await db.insert(currentTable, rowData, conflictAlgorithm: ConflictAlgorithm.replace);
-  //       }
-  //     }
-  //     return true;
-  //   } catch (e) {
-  //     print("❌ Error during import: $e");
-  //     return false;
-  //   }
-  // }
+
+
+  static Future<bool> backupDatabase() async {
+
+    final _saf = SafUtil();
+    try {
+      String? pickedDirectory = await _saf.openDirectory();
+      if (pickedDirectory == null) {
+        print("❌ No directory selected!");
+        return false;
+      }
+
+      String filePath = "$pickedDirectory/backup.csv";
+
+      bool success = await exportToCSV(filePath);
+      return success;
+    } catch (e) {
+      print("❌ Error during backup: $e");
+      return false;
+    }
+  }
+
+  static Future<bool> restoreDatabase() async {
+
+    try {
+
+      bool success = await importFromCSV();
+      return success;
+    } catch (e) {
+      print("❌ Error during restore: $e");
+      return false;
+    }
+  }
+
+  Future<String?> picksafdirectory() async {
+    final _safUtil = SafUtil();
+    String? selectedDirectory = await _safUtil.openDirectory();
+    if (selectedDirectory == null) {
+      Fluttertoast.showToast(msg: "No folder selected.");
+      return null;
+    }
+    return selectedDirectory;
+  }
+
+  static Future<bool> exportToCSV(String filePath) async {
+    final _safStreamPlugin = SafStream();
+    final _safUtil = SafUtil();
+    String? selectedDirectory = await _safUtil.openDirectory();
+    try {
+      Database db = await instance.database;
+      List<String> tables = ['caseinfo','disposedcase','casemultiplehistory','casenote', 'courtlist','casetype'];
+
+      List<List<String>> csvData = [];
+      for (String table in tables) {
+        List<Map<String, dynamic>> rows = await db.query(table);
+        print("roesssss : $rows");
+        if (rows.isNotEmpty) {
+          csvData.add([table]); // Table name
+          csvData.add(rows.first.keys.toList()); // Column headers
+          for (var row in rows) {
+            csvData.add(row.values.map((value) => value.toString()).toList());
+          }
+        }
+      }
+      String csv = const ListToCsvConverter().convert(csvData);
+      Uint8List unitdata = Uint8List.fromList(csv.codeUnits);
+      await _safStreamPlugin.writeFileBytes(selectedDirectory??"", "fxdfhjh.csv", "text/csv", unitdata);
+
+
+      print("✅ Exported Success");
+      return true;
+    } catch (e) {
+      print("❌ Error during export: $e");
+      return false;
+    }
+  }
+
+  static Future<bool> importFromCSV() async {
+    final _safUtil = SafUtil();
+    String? selectedFilePath = await _safUtil.openFile();
+
+    if (selectedFilePath == null) {
+      print("❌ No file selected.");
+      return false;
+    }
+
+    try {
+      final _safStreamPlugin = SafStream();
+      Uint8List fileBytes = (await _safStreamPlugin.readFileBytes(selectedFilePath)) as Uint8List;
+
+      String fileContent = utf8.decode(fileBytes);
+      List<List<dynamic>> csvData = const CsvToListConverter().convert(fileContent);
+
+      print("CSV Data: $csvData");
+
+      Database db = await instance.database;
+      String? currentTable;
+      List<String> currentColumns = [];
+      List<String> knownTables = ['caseinfo','disposedcase','casemultiplehistory','casenote', 'courtlist','casetype'];
+
+      for (int i = 0; i < csvData.length; i++) {
+        List<dynamic> row = csvData[i];
+
+        if (row.isEmpty) continue;
+
+        if (row.length == 1 && knownTables.contains(row[0].toString().trim().toLowerCase())) {
+          // Found a new table name
+          currentTable = row[0].toString().trim();
+          print("👉 Switching to table: $currentTable");
+
+          // Next row should be the column headers
+          if (i + 1 < csvData.length) {
+            currentColumns = csvData[i + 1].map((e) => e.toString()).toList();
+            i++; // Skip to the row after headers
+          }
+        } else if (currentTable != null && currentColumns.isNotEmpty) {
+          // Data row for the current table
+          Map<String, dynamic> rowData = {};
+
+          for (int j = 0; j < currentColumns.length && j < row.length; j++) {
+            rowData[currentColumns[j]] = row[j];
+          }
+
+          await db.insert(currentTable, rowData, conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+      }
+
+      print("✅ Data imported successfully!");
+      return true;
+    } catch (e) {
+      print("❌ Error during import: $e");
+      return false;
+    }
+  }
 
 }

@@ -113,8 +113,8 @@ class _DisposedCasesState extends State<DisposedCases> {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: () {
-                  Navigator.push(
+                onPressed: () async{
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => CaseDetailsPage(
@@ -124,7 +124,9 @@ class _DisposedCasesState extends State<DisposedCases> {
                       ),
                     ),
                   );
-
+                  if (result == true) {
+                    _loadDisposedCases();
+                  }
                 },
                 child: const Text("View Details", style: TextStyle(color: Colors.blue, fontSize: 16)),
               ),

@@ -207,7 +207,7 @@ class _CasesState extends State<Cases> {
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
         onPressed: (){
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>Home()));
+        Navigator.pop(context,true);
         },
       ),
       bottom: PreferredSize(
@@ -224,6 +224,7 @@ class _CasesState extends State<Cases> {
                     controller: _searchController,
                     onChanged: _filterCases,
                     decoration: InputDecoration(
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       hintText: "Search",
                       prefixIcon: const Icon(Icons.search, size: 20),
                       isDense: true, // Reduces vertical height
@@ -266,17 +267,21 @@ class _CasesState extends State<Cases> {
 
   Widget _buildCaseCard(Map<String, dynamic> caseItem) {
     return InkWell(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => CaseDetailsPage(
               caseItem: caseItem,
               caseId: int.parse(caseItem['case_id'].toString()),
-              disposeFlag: true,  // Pass the flag value
+              disposeFlag: true,
             ),
           ),
         );
+
+        if (result == true) {
+          _loadCases(); // Refresh if needed
+        }
       },
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

@@ -79,6 +79,7 @@ class _ManageCourtState extends State<ManageCourt> {
         title: const Text("Add Court"),
         content: TextField(
           controller: controller,
+          textCapitalization: TextCapitalization.sentences,
           decoration: const InputDecoration(hintText: "Enter court name"),
         ),
         actions: [

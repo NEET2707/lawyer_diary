@@ -35,6 +35,13 @@ class _HomeState extends State<Home> {
     fetchTotalRecords(); // Refresh counts when page is revisited
   }
 
+  Future<void> _loadDisposeCount() async {
+    List<Map<String, dynamic>> disposed = await DatabaseHelper.instance.getDisposedCases();
+    setState(() {
+      totaldispose = disposed.length;
+    });
+  }
+
   Future<void> fetchTotalRecords() async {
     int cases = await DatabaseHelper.instance.getCountExcludingDisposedCases();
     int disposed = await DatabaseHelper.instance.countDisposedCases();
@@ -102,11 +109,14 @@ class _HomeState extends State<Home> {
                 leading: Icon(Icons.manage_search_sharp, size: 40, color: Colors.blue.shade900),
                 title: Text("Cases", style: TextStyle(fontWeight: FontWeight.bold , fontSize: 16)),
                 subtitle: Text("Clik to View All Cases", style: TextStyle(fontSize: 14   )),
-                onTap: (){
-                    Navigator.push(
+                onTap: () async {
+                 var reesult = await  Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => Cases()),
                     );
+                 if(reesult == true){
+                   fetchTotalRecords();
+                 }
                   },
                 trailing: CircleAvatar(
                   backgroundColor: Colors.blue.shade900,
@@ -118,13 +128,17 @@ class _HomeState extends State<Home> {
             _buildHomeCard(icon: Icons.bookmark_remove_sharp,
                 title: "Disoposed Cases",
                 subtitle: "Clik to View All Disoposed Cases List",
-                onTap: (){
-                  Navigator.push(
+                onTap: () async {
+                  final result = await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => DisposedCases()),
+                    MaterialPageRoute(builder: (context) => const DisposedCases()),
                   );
+
+                  if (result == true) {
+                    _loadDisposeCount(); // Recalculate totaldispose
+                  }
                 },
-              trailingWidget: CircleAvatar(
+                trailingWidget: CircleAvatar(
                 backgroundColor: Colors.blue.shade900,
                 child: Text(totaldispose.toString(),style: TextStyle(color: Colors.white),))
             ),
@@ -183,10 +197,10 @@ class _HomeState extends State<Home> {
                 title: "Lawyer Diary Backup",
                 subtitle: "Back Up/ Restore Your Case Entries",
                 onTap: (){
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(builder: (context) => Backup()),
-                  // );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => BackupScreen()),
+                  );
                 }             ),
           ],
         ),

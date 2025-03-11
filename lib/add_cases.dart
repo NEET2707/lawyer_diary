@@ -125,7 +125,9 @@ class _AddCasesState extends State<AddCases> {
       builder: (context) {
         return AlertDialog(
           title: Text("Add $title"),
-          content: TextField(controller: controller, decoration: InputDecoration(hintText: "Enter $title")),
+          content: TextField(
+              textCapitalization: TextCapitalization.sentences,
+              controller: controller, decoration: InputDecoration(hintText: "Enter $title")),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCEL")),
             TextButton(onPressed: () {
@@ -163,28 +165,28 @@ class _AddCasesState extends State<AddCases> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _sectionTitle("CASE DETAILS"),
-            _textField("Case Title", _caseTitleController, isRequired: true),
+            _textField(
+                "Case Title", _caseTitleController, isRequired: true),
             _dropdownField("Court Name", selectedCourt, courtOptions, (value) {
               setState(() {
                 selectedCourt = value!;
               });
             }, () {
-              _showInputDialog("Court Name", (input) {
+              _showInputDialog("Court Name", (input) async {
+                await _addToDatabase('courtlist', 'court_name', input);
                 setState(() {
-                  courtOptions.add(input);
                   selectedCourt = input;
                 });
-              }
-              );
+              });
             }, isRequired: true),
             _dropdownField("Case Type", selectedCaseType, caseTypeOptions, (value) {
               setState(() {
                 selectedCaseType = value!;
               });
             }, () {
-              _showInputDialog("Case Type", (input) {
+              _showInputDialog("Case Type", (input) async {
+                await _addToDatabase('casetype', 'case_type', input);
                 setState(() {
-                  caseTypeOptions.add(input);
                   selectedCaseType = input;
                 });
               });
@@ -233,8 +235,9 @@ class _AddCasesState extends State<AddCases> {
         controller: controller,
         keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
         inputFormatters: isNumeric ? [FilteringTextInputFormatter.digitsOnly] : [],
+        textCapitalization: TextCapitalization.sentences, // 👈 Capitalize first letter
         decoration: InputDecoration(
-          labelText: isRequired ? '$label *' : label,  // Add asterisk for required fields
+          labelText: isRequired ? '$label *' : label,
           border: OutlineInputBorder(),
           contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
         ),
@@ -242,6 +245,7 @@ class _AddCasesState extends State<AddCases> {
       ),
     );
   }
+
 
   Widget _dropdownField(
       String label, String value, List<String> options, ValueChanged<String?> onChanged, VoidCallback onAdd, {bool isRequired = false}) {

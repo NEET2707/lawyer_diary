@@ -14,6 +14,7 @@ class DisposeCases extends StatefulWidget {
   @override
   State<DisposeCases> createState() => _DisposeCasesState();
 }
+
 class _DisposeCasesState extends State<DisposeCases> {
   final TextEditingController _disposeNoteController = TextEditingController();
   DateTime? _selectedDate;
@@ -24,7 +25,8 @@ class _DisposeCasesState extends State<DisposeCases> {
       appBar: AppBar(
         backgroundColor: themecolor,
         foregroundColor: Colors.white,
-        title: const Text("Dispose Cases", style: TextStyle(color: Colors.white)),
+        title:
+            const Text("Dispose Cases", style: TextStyle(color: Colors.white)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -39,9 +41,11 @@ class _DisposeCasesState extends State<DisposeCases> {
                   "Nature Of \n Dispose:",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
-                const SizedBox(width: 20), // Spacing between label and input field
+                const SizedBox(
+                    width: 20), // Spacing between label and input field
                 Expanded(
                   child: TextField(
+                    textCapitalization: TextCapitalization.sentences,
                     controller: _disposeNoteController,
                     maxLines: 3,
                     decoration: const InputDecoration(
@@ -57,7 +61,8 @@ class _DisposeCasesState extends State<DisposeCases> {
             // Dispose Date (Date Picker)
             Row(
               children: [
-                const Text("Dispose Dt.:", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text("Dispose Dt.:",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(width: 10),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(backgroundColor: themecolor),
@@ -66,8 +71,8 @@ class _DisposeCasesState extends State<DisposeCases> {
                   label: Text(
                     _selectedDate != null
                         ? "${_selectedDate!.day.toString().padLeft(2, '0')} "
-                        "${_selectedDate!.month.toString().padLeft(2, '0')} "
-                        "${_selectedDate!.year}"
+                            "${_selectedDate!.month.toString().padLeft(2, '0')} "
+                            "${_selectedDate!.year}"
                         : "Pick a date",
                     style: const TextStyle(color: Colors.white),
                   ),
@@ -84,8 +89,10 @@ class _DisposeCasesState extends State<DisposeCases> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: themecolor,
                   ),
-                  onPressed: () => _saveCase(), // Ensure you pass a valid case ID
-                  child: const Text("SAVE", style: TextStyle(color: Colors.white)),
+                  onPressed: () =>
+                      _saveCase(), // Ensure you pass a valid case ID
+                  child:
+                      const Text("SAVE", style: TextStyle(color: Colors.white)),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -95,7 +102,8 @@ class _DisposeCasesState extends State<DisposeCases> {
                   //   Navigator.push(context, MaterialPageRoute(builder: (context) => GradientPage(),));
                   // },
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("CANCEL", style: TextStyle(color: Colors.white)),
+                  child: const Text("CANCEL",
+                      style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
@@ -104,7 +112,6 @@ class _DisposeCasesState extends State<DisposeCases> {
       ),
     );
   }
-
 
   void _saveCase() async {
     String disposeNote = _disposeNoteController.text;
@@ -135,7 +142,8 @@ class _DisposeCasesState extends State<DisposeCases> {
     );
 
     if (confirm == true) {
-      await DatabaseHelper.instance.saveDisposedCase(widget.caseId, disposeNote, _selectedDate!);
+      await DatabaseHelper.instance
+          .saveDisposedCase(widget.caseId, disposeNote, _selectedDate!);
 
       await DatabaseHelper.instance.updateCaseAsDisposed(widget.caseId);
 
@@ -143,14 +151,9 @@ class _DisposeCasesState extends State<DisposeCases> {
         const SnackBar(content: Text("Case disposed successfully!")),
       );
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => Cases()),
-            (route) => false,
-      );
+      Navigator.pop(context, true);
     }
   }
-
 
   // Function to pick a date
   void _pickDate() async {

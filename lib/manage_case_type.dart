@@ -77,6 +77,7 @@ class _ManageCaseTypeState extends State<ManageCaseType> {
         title: const Text("Add Case Type"),
         content: TextField(
           controller: controller,
+          textCapitalization: TextCapitalization.sentences,
           decoration: const InputDecoration(hintText: "Enter case type"),
         ),
         actions: [

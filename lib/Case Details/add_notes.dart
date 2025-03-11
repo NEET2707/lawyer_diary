@@ -70,6 +70,7 @@ class _AddNotesState extends State<AddNotes> {
             const Text("Write Notes For This Case", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
             const SizedBox(height: 10),
             TextField(
+              textCapitalization: TextCapitalization.sentences,
               controller: _disposeNoteController,
               maxLines: 5,
               decoration: const InputDecoration(
