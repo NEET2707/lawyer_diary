@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:lawyer_diary/Database/database_helper.dart';
-import 'package:lawyer_diary/add_cases.dart';
-import 'package:lawyer_diary/backup.dart';
-import 'package:lawyer_diary/manage_case_type.dart';
-import 'package:lawyer_diary/manage_court.dart';
-import 'package:lawyer_diary/reminderpage.dart';
+import 'package:lawyer_diary/settings.dart';
+import 'Case Details/case_details.dart';
 import 'cases.dart';
 import 'color.dart';
-import 'disoposed_cases.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -17,14 +14,15 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  // final Color teakWood = Color(0xFFC19A6B); // Teak Wood
-
   int totalcase = 0;
   int totaldispose = 0;
-  int count = 0;
+  int _selectedIndex = 0;
+
+  List<Map<String, dynamic>> latestCases = [];
+  List<Map<String, dynamic>> todayCases = [];
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     fetchTotalRecords();
   }
@@ -32,223 +30,235 @@ class _HomeState extends State<Home> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    fetchTotalRecords(); // Refresh counts when page is revisited
-  }
-
-  Future<void> _loadDisposeCount() async {
-    List<Map<String, dynamic>> disposed = await DatabaseHelper.instance.getDisposedCases();
-    setState(() {
-      totaldispose = disposed.length;
-    });
+    fetchTotalRecords();
   }
 
   Future<void> fetchTotalRecords() async {
     int cases = await DatabaseHelper.instance.getCountExcludingDisposedCases();
     int disposed = await DatabaseHelper.instance.countDisposedCases();
-    int reminders = await DatabaseHelper.instance.countRecordsWithTodayAdjournDate();
+    List<Map<String, dynamic>> latest =
+        await DatabaseHelper.instance.getFirstFiveAdjournCases();
+
+    // 🔄 NEW: Use step-based adjourn data
+    List<Map<String, dynamic>> todayStepCases =
+        await DatabaseHelper.instance.getUpcomingCasesWithSteps();
 
     setState(() {
       totalcase = cases;
       totaldispose = disposed;
-      count = reminders;
+      latestCases = latest;
+      todayCases = todayStepCases;
     });
-
-    print('Total cases: $totalcase');
-    print('Disposed cases: $totaldispose');
-    print('Today’s reminders: $count');
   }
 
+  final List<Widget> _pages = [
+    Container(),
+    Builder(builder: (context) => Cases()),
+    Settings(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: themecolor, // Use the variable
-        title: const Text("Lawyer Diary" , style: TextStyle(color:Colors.white),),
-        actions: [
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ReminderPage()),
-              );
-            },
-            child: const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Icon(Icons.notification_add, color: Colors.white,),
+      appBar: (_selectedIndex == 1 || _selectedIndex == 2)
+          ? null
+          : AppBar(
+              backgroundColor: themecolor,
+              title: const Text("Lawyer Diary",
+                  style: TextStyle(color: Colors.white)),
             ),
-          )
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await fetchTotalRecords(); // Correct function call
-        },        child: ListView(
-          padding: EdgeInsets.all(16.0),
+      body: _selectedIndex == 0
+          ? RefreshIndicator(
+              onRefresh: fetchTotalRecords,
+              child: ListView(
+                padding: EdgeInsets.all(16.0),
+                children: [
+                  if (latestCases.isNotEmpty)
+                    _buildCaseCard("Latest 5 Cases", latestCases),
+                  if (todayCases.isNotEmpty)
+                    _buildStepsTab("Today's Adjourn Cases", todayCases)
+                  else
+                    _buildNoStepsCard(),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: () async {},
+              child: _pages[_selectedIndex],
+            ),
+      bottomNavigationBar: BottomAppBar(
+        shape: CircularNotchedRectangle(),
+        height: 65,
+        notchMargin: 8.0,
+        color: themecolor,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // _buildHomeCard(icon: Icons.manage_search_sharp,
-            //   title: "Cases",
-            //   subtitle: "Clik to View All Cases",
-            //   onTap: (){
-            //     Navigator.push(
-            //       context,
-            //       MaterialPageRoute(builder: (context) => Cases()),
-            //     );
-            //   }
-            // ),
-
-
-            Card(
-              color: Colors.white,
-              elevation: 1,
-              margin: EdgeInsets.only(bottom: 12.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              child: ListTile(
-                leading: Icon(Icons.manage_search_sharp, size: 40, color: Colors.blue.shade900),
-                title: Text("Cases", style: TextStyle(fontWeight: FontWeight.bold , fontSize: 16)),
-                subtitle: Text("Clik to View All Cases", style: TextStyle(fontSize: 14   )),
-                onTap: () async {
-                 var reesult = await  Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => Cases()),
-                    );
-                 if(reesult == true){
-                   fetchTotalRecords();
-                 }
-                  },
-                trailing: CircleAvatar(
-                  backgroundColor: Colors.blue.shade900,
-                  child: Text(totalcase.toString(),style: TextStyle(color: Colors.white),),
-                ),// Display the trailing widget here
-              ),
-            ),
-
-            _buildHomeCard(icon: Icons.bookmark_remove_sharp,
-                title: "Disoposed Cases",
-                subtitle: "Clik to View All Disoposed Cases List",
-                onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const DisposedCases()),
-                  );
-
-                  if (result == true) {
-                    _loadDisposeCount(); // Recalculate totaldispose
-                  }
-                },
-                trailingWidget: CircleAvatar(
-                backgroundColor: Colors.blue.shade900,
-                child: Text(totaldispose.toString(),style: TextStyle(color: Colors.white),))
-            ),
-            _buildHomeCard(icon: Icons.add_box_outlined,
-                title: "Add Cases",
-                subtitle: "Clik to Add Cases Details",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => AddCases()),
-                  ).then((result) {
-                    if (result == true) {
-                      fetchTotalRecords(); // Only refresh if a case was actually added
-                    }
-                  });
-                }
-            ),
-
-            _buildHomeCard(icon: Icons.maps_home_work_outlined,
-                title: "Manage Court",
-                subtitle: "Clik to Manage Court List",
-                onTap: (){
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ManageCourt()),
-                  );
-                }
-                ),
-
-            _buildHomeCard(icon: Icons.cases_rounded,
-                title: "Manage CaseType",
-                subtitle: "Clik to Manage CaseType List",
-                onTap: (){
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ManageCaseType()),
-                  );
-                }           ),
-
-            _buildHomeCard(icon: Icons.punch_clock,
-                title: "Reminder Cases",
-                subtitle: "Clik to View All Reminder Cases",
-                onTap: (){
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ReminderPage()),
-                  );
-                },
-              trailingWidget:  CircleAvatar(
-                backgroundColor: Colors.blue.shade900,
-                child: Text(count.toString(),style: TextStyle(color: Colors.white),),
-              ),
-              ),
-
-            _buildHomeCard(icon: Icons.restore,
-                title: "Lawyer Diary Backup",
-                subtitle: "Back Up/ Restore Your Case Entries",
-                onTap: (){
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => BackupScreen()),
-                  );
-                }             ),
+            _buildNavItem(Icons.home, "Home", 0),
+            _buildNavItem(Icons.account_circle, "All Cases", 1),
+            _buildNavItem(Icons.settings, "Settings", 2),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: themecolor,
-        shape: CircleBorder(),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => AddCases()),
-            ).then((result) {
-              if (result == true) {
-                fetchTotalRecords(); // Only refresh if a case was actually added
-              }
-            });
-          },
-          child: Icon(Icons.add, color: Colors.white),
-      ),    );
+    );
   }
-}
 
+  Widget _buildCaseCard(String title, List<Map<String, dynamic>> cases) {
+    return Card(
+      elevation: 3,
+      margin: EdgeInsets.symmetric(vertical: 2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.only(top: 10,left: 4,right: 4,bottom: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Divider(),
+            ...List.generate(cases.length, (index) {
+              final caseData = cases[index];
+              return Column(
+                children: [
+                  ListTile(
+                    title: Text(caseData['case_title']),
+                    subtitle: Text(
+                        "ID: ${caseData['case_id']} • ${caseData['case_type']}"),
+                    trailing: Text(
+                      DateFormat('dd-MM-yyyy').format(
+                          DateTime.parse(caseData['last_adjourn_date'])),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CaseDetailsPage(
+                            caseItem: caseData,
+                            caseId: int.parse(caseData['case_id'].toString()),
+                            disposeFlag: true,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Divider(height: 8),
+                ],
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
 
-Widget _buildHomeCard({
-  required IconData icon,
-  required String title,
-  required String subtitle,
-  void Function()? onTap,
-  Widget?
-  trailingWidget,
-  IconData? leadingIcon,
-}) {
-  return Card(
-    color: Colors.white,
-    elevation: 1,
-    margin: EdgeInsets.only(bottom: 12.0),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12.0),
-    ),
-    child: ListTile(
-      leading: leadingIcon != null
-          ? Icon(leadingIcon,
-          size: 40, color: Colors.black54)
-          : Icon(icon, size: 40, color: Colors.blue.shade900), // Default icon
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold , fontSize: 16)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 14   )),
-      onTap: onTap,
-      trailing: trailingWidget,
-    ),
-  );
+  Widget _buildNoStepsCard() {
+    return Card(
+      elevation: 3,
+      margin: EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(Icons.info_outline, size: 40, color: Colors.grey),
+            SizedBox(height: 10),
+            Text(
+              "No cases available for today's adjourn date.\nNo steps available.",
+              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStepsTab(String title, List<Map<String, dynamic>> cases) {
+    return Card(
+      elevation: 3,
+      margin: EdgeInsets.symmetric(vertical: 2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.only(top: 10,left: 4,right: 4,bottom: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Divider(),
+            ...List.generate(cases.length, (index) {
+              final caseData = cases[index];
+              return Column(
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            caseData['case_title'],
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        Text(
+                          DateFormat('dd-MM-yyyy').format(
+                            DateTime.parse(caseData['adjourn_date']),
+                          ),
+                          style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                        ),
+                      ],
+                    ),
+                    subtitle: Text(
+                      "ID: ${caseData['case_number']} • ${caseData['case_type']}\nStep: ${caseData['step'] ?? 'N/A'}",
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CaseDetailsPage(
+                            caseItem: caseData,
+                            caseId: int.parse(caseData['case_id'].toString()),
+                            disposeFlag: true,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                    Divider(height: 0),
+                ],
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, int index) {
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        child: SizedBox(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 20, color: Colors.white),
+              SizedBox(height: 2),
+              Text(label, style: TextStyle(fontSize: 12, color: Colors.white)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

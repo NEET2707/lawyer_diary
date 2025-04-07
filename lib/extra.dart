@@ -652,3 +652,40 @@
 //     );
 //   }
 // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Future<List<Map<String, dynamic>>> getCasesWithStepsForToday() async {
+//   final db = await database;
+//   String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+//
+//   return await db.rawQuery('''
+//     SELECT ci.*, cmh.step, cmh.adjourn_date
+//     FROM casemultiplehistory cmh
+//     INNER JOIN caseinfo ci ON ci.case_id = cmh.case_id
+//     WHERE DATE(cmh.adjourn_date) = ?
+//     AND ci.is_disposed = 0
+//     ORDER BY cmh.adjourn_date DESC
+//   ''', [today]);
+// }

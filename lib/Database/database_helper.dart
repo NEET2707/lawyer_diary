@@ -159,6 +159,71 @@ class DatabaseHelper {
 
   }
 
+// First 5 cases by earliest adjourn date
+  Future<List<Map<String, dynamic>>> getFirstFiveAdjournCases() async {
+    final db = await database;
+    return await db.rawQuery('''
+    SELECT * FROM caseinfo 
+    WHERE is_disposed = 0 AND last_adjourn_date IS NOT NULL
+    ORDER BY last_adjourn_date DESC 
+    LIMIT 5
+  ''');
+  }
+
+  Future<List<Map<String, dynamic>>> getUpcomingCasesWithSteps() async {
+    final db = await database;
+    String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    String sevenDaysLater =
+    DateFormat('yyyy-MM-dd').format(DateTime.now().add(Duration(days: 7)));
+
+    return await db.rawQuery('''
+    SELECT ci.*, cmh.step, cmh.adjourn_date
+    FROM casemultiplehistory cmh
+    INNER JOIN caseinfo ci ON ci.case_id = cmh.case_id
+    WHERE DATE(cmh.adjourn_date) BETWEEN ? AND ?
+      AND ci.is_disposed = 0
+    ORDER BY DATE(cmh.adjourn_date) ASC
+  ''', [today, sevenDaysLater]);
+  }
+
+
+
+  Future<List<Map<String, dynamic>>> getCasesForTodayAdjournDate() async {
+    final db = await database;
+    String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    return await db.rawQuery('''
+    SELECT * FROM caseinfo 
+    WHERE is_disposed = 0 
+      AND last_adjourn_date = ?
+  ''', [today]);
+  }
+
+
+
+  Future<List<Map<String, dynamic>>> getTodayAdjournCases() async {
+    final db = await database;
+    String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    print("Fetching cases with Adjourn Date: $today"); // Debug print
+
+    final result = await db.rawQuery('''
+    SELECT case_id, case_title, case_type, last_adjourn_date 
+    FROM caseinfo 
+    WHERE DATE(last_adjourn_date) = ?
+    ORDER BY last_adjourn_date DESC
+  ''', [today]);
+
+    print("Found ${result.length} cases for today"); // Debug print
+
+    return result;
+  }
+
+  Future<List<Map<String, dynamic>>> getAllCases() async {
+    final db = await database;
+    return await db.query('caseinfo'); // Replace 'caseinfo' with your actual table name
+  }
+
 
 
   // Future<List<Map<String, dynamic>>> getDisposedCases() async {
@@ -433,7 +498,7 @@ class DatabaseHelper {
   static Future<bool> exportToCSV(String filePath) async {
     final _safStreamPlugin = SafStream();
     final _safUtil = SafUtil();
-    String? selectedDirectory = await _safUtil.openDirectory();
+    // String? selectedDirectory = await _safUtil.openDirectory();
     try {
       Database db = await instance.database;
       List<String> tables = ['caseinfo','disposedcase','casemultiplehistory','casenote', 'courtlist','casetype'];
@@ -452,7 +517,7 @@ class DatabaseHelper {
       }
       String csv = const ListToCsvConverter().convert(csvData);
       Uint8List unitdata = Uint8List.fromList(csv.codeUnits);
-      await _safStreamPlugin.writeFileBytes(selectedDirectory??"", "fxdfhjh.csv", "text/csv", unitdata);
+      await _safStreamPlugin.writeFileBytes(filePath, "fxdfhjh.csv", "text/csv", unitdata);
 
 
       print("✅ Exported Success");

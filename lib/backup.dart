@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import 'Database/database_helper.dart';
+import 'Database/sharedpreferencehelper.dart';
 import 'color.dart';
 
 class BackupScreen extends StatefulWidget {
@@ -11,12 +13,14 @@ class BackupScreen extends StatefulWidget {
 }
 
 class _BackupScreenState extends State<BackupScreen> {
-
+  String lastBackupTime = "";
+  String storageBackupStatus = "";
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    _loadLastBackupRestoreTimes();
   }
 
   bool issignin = false;
@@ -25,15 +29,33 @@ class _BackupScreenState extends State<BackupScreen> {
 
   void backupDatabase() async {
     bool success = await DatabaseHelper.backupDatabase();
-    setState(() {
-      var storageBackupStatus = success ? "Last Backup: Successful" : "Last Backup: Failed";
-    });
+    if (success) {
+      await _saveLastBackupTime();
+    }
   }
 
   void restoreDatabase() async {
     bool success = await DatabaseHelper.restoreDatabase();
+    if (success) {
+      // await _saveLastRestoreTime();
+    }
+  }
+
+  Future<void> _loadLastBackupRestoreTimes() async {
+    String? saveddate = await SharedPreferenceHelper.get(prefKey: PrefKey.password);
+    if (saveddate != null && saveddate.isNotEmpty) {
+      setState(() {
+        lastBackupTime = DateFormat("dd MMMM yyyy hh:mm a").format(DateTime.parse(saveddate));
+      });
+    }
+  }
+
+
+  Future<void> _saveLastBackupTime() async {
+    String currentTime = DateTime.now().toString();
+    await SharedPreferenceHelper.save(value: currentTime, prefKey: PrefKey.password);
     setState(() {
-      var storageBackupStatus = success ? "Restore Successful!" : "Restore Failed!";
+      lastBackupTime = currentTime;
     });
   }
 
@@ -71,37 +93,48 @@ class _BackupScreenState extends State<BackupScreen> {
                               fontWeight: FontWeight.w500,
                               fontSize: 20),
                         ),
-                        SizedBox(
-                          height: 10,
-                        ),
+                        SizedBox(height: 10),
                         Text(
-                            "Back up your Accounts and Ledger to your Internal storage. You can restore it from Backup file."),
-                        SizedBox(
-                          height: 10,
+                            "Back up your Accounts and Lawyer Diary to your Internal storage. You can restore it from Backup file."
                         ),
-                        // Text(
-                        //   "Last Backup: ${SharedPref.get(prefKey: PrefKey.lastbackup) ?? "No Backup yet"}",
-                        //   style: TextStyle(
-                        //       fontSize: 15, fontWeight: FontWeight.w500),
-                        // ),
-                        SizedBox(
-                          height: 15,
+                        SizedBox(height: 8),
+
+                        // Wrap backup info in a Card
+                        Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "$storageBackupStatus",
+                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                lastBackupTime == "" ? "" : "Last Backup: $lastBackupTime",
+                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                              ),
+                            ],
+                          ),
                         ),
+
+                        SizedBox(height: 15),
+
                         InkWell(
                           onTap: () {
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  title: const Text("Backup Cash Book !!!"),
+                                  title: const Text("Backup Lawyer Diary !!!"),
                                   content: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       const Text(
                                         '''
 Follow the steps
-        
-Cashbook Local Backup
+
+Lawyer Diary Local Backup
 1. Click on 'Backup' Button.
 2. Select/Create the specific folder on local storage to backup. (older one is 'cashbook_backup' or create a new one)
 3. Allow the Folder Permission.
@@ -145,9 +178,9 @@ Cashbook Local Backup
                                 )),
                           ),
                         ),
-                        SizedBox(
-                          height: 15,
-                        ),
+
+                        SizedBox(height: 15),
+
                         InkWell(
                           onTap: () {
                             showDialog(
@@ -159,22 +192,20 @@ Cashbook Local Backup
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       const Text(
-                                        '''If you restore to previous version then current latest cash book entry will not more available after restoring the backup.
+                                        '''If you restore to previous version then current latest Lawyer Diary entry will not more available after restoring the backup.
         
 Are you sure want to restore the data?''',
                                       ),
-                                      SizedBox(
-                                        height: 15,
-                                      ),
+                                      SizedBox(height: 15),
                                       const Text(
                                         '''Follow the steps
-                                              Cashbook Local Restore
-                                              1. Make sure your existing entries will be removed.
-                                              2. Click on 'Restore' Button.
-                                              3. Select specific folder to restore.
-                                              4. Allow the Folder Permission.
-                                              5. That's it. Restore Done. 
-                                              ''',
+                      Lawyer Diary Local Restore
+                      1. Make sure your existing entries will be removed.
+                      2. Click on 'Restore' Button.
+                      3. Select specific folder to restore.
+                      4. Allow the Folder Permission.
+                      5. That's it. Restore Done. 
+                      ''',
                                         style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w400,
@@ -213,7 +244,8 @@ Are you sure want to restore the data?''',
                                 )),
                           ),
                         ),
-                      ]),
+                      ]
+                  ),
                 ),
               ),
               SizedBox(

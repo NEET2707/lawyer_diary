@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:lawyer_diary/home.dart';
 import 'Case Details/case_details.dart';
 import 'Database/database_helper.dart';
+import 'add_cases.dart';
 import 'color.dart';
 
 class CaseModel {
@@ -196,6 +197,21 @@ class _CasesState extends State<Cases> {
           },
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: themecolor,
+        shape: CircleBorder(),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddCases()),
+          ).then((result) {
+            if (result == true) {
+              // fetchTotalRecords(); // Only refresh if a case was actually added
+            }
+          });
+        },
+        child: Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 
@@ -340,7 +356,6 @@ class _CasesState extends State<Cases> {
               // On Behalf Of
               _detailRow("On Behalf Of", caseItem['case_behalf_of']),
 
-              // Previous and Adjourn Date
               _detailRow("Previous Date", "-"), // Update if available
               _detailRow(
                 "Adjourn Date",
@@ -349,8 +364,6 @@ class _CasesState extends State<Cases> {
                     : 'N/A',
               ),
 
-
-              // Steps
               _detailRow("Steps", "no steps"), // Update dynamically if needed
             ],
           ),
